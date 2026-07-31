@@ -60,6 +60,9 @@
     <ClCompile Include="src\engine\InputSystem.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
+    <ClCompile Include="src\engine\PsoManager.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include=".editorconfig" />
@@ -120,6 +123,12 @@
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\InputSystem.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\PsoManager.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\LogSystem.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

@@ -44,19 +44,84 @@ void Model::LoadModel(const std::string& directoryPath, const std::string& filen
 
 }
 
+void Model::UsingTemplateModel(int type) {
+	switch (type) {
+	case 0:
+		vertexResource = engineCommon_->CreateBufferResource(engineCommon_->GetDevice(), sizeof(VertexData) * 4);
+		D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+		vertexBufferViewSprite.BufferLocation = vertexResource->GetGPUVirtualAddress();
+		vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
+		vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+
+		vertexData = nullptr;
+		vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+
+		vertexData[0].position = { 0.0f, 360.f, 0.0f, 1.0f };
+		vertexData[0].texcoord = { 0.0f, 1.0f };
+		vertexData[0].normal = { 0.0f, 0.0f, -1.0f };
+
+		vertexData[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
+		vertexData[1].texcoord = { 0.0f, 0.0f };
+		vertexData[1].normal = { 0.0f, 0.0f, -1.0f };
+
+		vertexData[2].position = { 640.f, 360.f, 0.0f, 1.0f };
+		vertexData[2].texcoord = { 1.0f, 1.0f };
+		vertexData[2].normal = { 0.0f, 0.0f, -1.0f };
+
+		vertexData[3].position = { 640.f, 0.0f, 0.0f, 1.0f };
+		vertexData[3].texcoord = { 1.0f, 0.0f };
+		vertexData[3].normal = { 0.0f, 0.0f, -1.0f };
+
+		indexResource = engineCommon_->CreateBufferResource(engineCommon_->GetDevice(), sizeof(uint32_t) * 6);
+		indexBufferView.BufferLocation = indexResource->GetGPUVirtualAddress();
+		indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
+		indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+
+		uint32_t* indexData = nullptr;
+		indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
+		indexData[0] = 0; indexData[1] = 1; indexData[2] = 2;
+		indexData[3] = 1; indexData[4] = 3; indexData[5] = 2;
+
+		wvpResource = engineCommon_->CreateBufferResource(engineCommon_->GetDevice(), sizeof(TransformationMatrix));
+		wvpData = nullptr;
+		wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+		*wvpData = { Matrix4x4::Identity(), Matrix4x4::Identity() };
+
+		materialResource = engineCommon_->CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
+		materialData = nullptr;
+		materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+		materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		materialData->enableLighting = false;
+		materialData->uvTransform = Matrix4x4::Identity();
+		break;
+	default:
+		assert(false && "Invalid model type");
+		break;
+	}
+}
+
 void Model::Draw() {
 	engineCommon_->GetCommandList()->SetGraphicsRootSignature(engineCommon_->GetRootSignature());
-	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPipelineState());
+	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Opaque3D));
+	if (indexResource) {
+		engineCommon_->GetCommandList()->IASetIndexBuffer(&indexBufferView);
+	}
 	engineCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 	engineCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, engineCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
 	engineCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU2);
-	engineCommon_->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+	if (indexResource) {
+		engineCommon_->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	}
+	else {
+		engineCommon_->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+	}
+	
 }
 
-MaterialData Model::LoadMaterialTemplayeFile(const std::string& directoryPath, const std::string& filename) {
+MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
 	MaterialData materialData;
 	std::string line;
 	std::ifstream file(directoryPath + "/" + filename);
@@ -80,77 +145,77 @@ MaterialData Model::LoadMaterialTemplayeFile(const std::string& directoryPath, c
 }
 
 ModelData  Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
-		ModelData modelData;
-		std::vector<Vector4> positions;
-		std::vector<Vector3> normals;
-		std::vector<Vector2> texcoords;
-		std::string line;
+	ModelData modelData;
+	std::vector<Vector4> positions;
+	std::vector<Vector3> normals;
+	std::vector<Vector2> texcoords;
+	std::string line;
 
-		std::ifstream file(directoryPath + "/" + filename);
-		assert(file.is_open());
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
 
-		while (std::getline(file, line)) {
-			std::string identifier;
-			std::istringstream s(line);
-			s >> identifier;
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
 
-			if (identifier == "v") {
-				Vector4 position;
-				s >> position.x >> position.y >> position.z;
-				position.w = 1.0f;
-				positions.push_back(position);
-			}
-			else if (identifier == "vt") {
-				Vector2 texcoord;
-				s >> texcoord.x >> texcoord.y;
+		if (identifier == "v") {
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		}
+		else if (identifier == "vt") {
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
 
-				texcoord.y = 1.0f - texcoord.y; // Invert the y-coordinate of the texture coordinate
+			texcoord.y = 1.0f - texcoord.y; // Invert the y-coordinate of the texture coordinate
 
-				texcoords.push_back(texcoord);
-			}
-			else if (identifier == "vn") {
-				Vector3 normal;
-				s >> normal.x >> normal.y >> normal.z;
-				normals.push_back(normal);
-			}
-			else if (identifier == "f") {
-				VertexData triangle[3];
+			texcoords.push_back(texcoord);
+		}
+		else if (identifier == "vn") {
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}
+		else if (identifier == "f") {
+			VertexData triangle[3];
 
-				for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-					std::string vertexDefinition;
-					s >> vertexDefinition;
+			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
+				std::string vertexDefinition;
+				s >> vertexDefinition;
 
-					std::istringstream v(vertexDefinition);
-					uint32_t elementIndices[3];
-					for (int32_t element = 0; element < 3; ++element) {
-						std::string index;
-						std::getline(v, index, '/');
-						elementIndices[element] = std::stoi(index);
-					}
-
-					Vector4 position = positions[elementIndices[0] - 1];
-					Vector2 texcoord = texcoords[elementIndices[1] - 1];
-					Vector3 normal = normals[elementIndices[2] - 1];
-
-					position.x *= -1.0f;
-					normal.x *= -1.0f;
-
-					triangle[faceVertex] = { position, texcoord, normal };
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; ++element) {
+					std::string index;
+					std::getline(v, index, '/');
+					elementIndices[element] = std::stoi(index);
 				}
 
+				Vector4 position = positions[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				Vector3 normal = normals[elementIndices[2] - 1];
 
+				position.x *= -1.0f;
+				normal.x *= -1.0f;
 
-				modelData.vertices.push_back(triangle[2]);
-				modelData.vertices.push_back(triangle[1]);
-				modelData.vertices.push_back(triangle[0]);
-
+				triangle[faceVertex] = { position, texcoord, normal };
 			}
-			else if (identifier == "mtllib") {
-				std::string materialFilename;
-				s >> materialFilename;
-				modelData.material = LoadMaterialTemplayeFile(directoryPath, materialFilename);
-			}
+
+
+
+			modelData.vertices.push_back(triangle[2]);
+			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
+
 		}
-		return modelData;
+		else if (identifier == "mtllib") {
+			std::string materialFilename;
+			s >> materialFilename;
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+		}
+	}
+	return modelData;
 }
 

@@ -64,6 +64,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 			Matrix4x4 wvpMatrix = worldMatrix * debugCamera.getViewProjectionMatrix();
 			*a.wvpData = { wvpMatrix, worldMatrix };
+			a.materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransformSprite.scale, uvTransformSprite.rotation, uvTransformSprite.translation);
 
 
 			engineCommon->PreDraw();
