@@ -5,6 +5,8 @@
 #include "../../externals/imgui/imgui_impl_win32.h"
 #include "../../externals/imgui/imgui_impl_dx12.h"
 
+#pragma comment(lib, "winmm.lib")
+
 // ImGui handler declaration
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -65,6 +67,8 @@ void WindowManager::Initialize(int nCmdShow, int width, int height, const wchar_
     }
 
     ShowWindow(hwnd_, nCmdShow);
+
+	timeBeginPeriod(1); // Set timer resolution to 1 ms
 }
 
 void WindowManager::Finalize() {

@@ -70,14 +70,63 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	clientHeight = Height;
 	clientWidth = Width;
 
+	InitializeFixFPS();
+
 	SetUnhandledExceptionFilter(ExportDump);
 	HREFTYPE hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-	assert(SUCCEEDED(hr));	
+	assert(SUCCEEDED(hr));
 
 	Log::Initialize();
 	Log::LogMessage("Hello, DirectX!");
 
-	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	// 1. デバイスの生成
+	InitializeDevice();
+
+	// WinApp / Window 初始化
+	windowManager.Initialize(SW_SHOW, clientWidth, clientHeight, L"CG2");
+
+	// 2. コマンド関連の初期化
+	InitializeCommand();
+
+	// 3. スワップチェーンの生成
+	CreateSwapChain();
+
+	// 4. 各種ディスクリプタヒープの生成
+	CreateDescriptorHeaps();
+
+	// 5. 深度バッファの生成
+	CreateDepthBuffer();
+
+	// 6. レンダーターゲットビューの初期化
+	InitializeRenderTargetViews();
+
+	// 7. 深度ステンシルビューの初期化
+	InitializeDepthStencilView();
+
+	// 8. フェンスの初期化
+	InitializeFence();
+
+	// 9. ビューポート矩形の初期化
+	InitializeViewport();
+
+	// 10. シザリング矩形の初期化
+	InitializeScissorRect();
+
+	// 其他子系統與 Pipeline 初期化
+	CreateDefaultPSO();
+	audioSystem_.Initialize();
+	inputSystem_.Initialize(windowManager.getHinstance(), windowManager.getHwnd());
+	InitializeLight();
+
+	// 11. ImGuiの初期化
+#ifdef _DEBUG
+	InitializeImGui();
+#endif
+}
+
+// デバイスの生成
+void EngineCommon::InitializeDevice() {
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(hr));
 
 #ifdef _DEBUG
@@ -137,11 +186,12 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 		infoQueue->Release();
 	}
 #endif
+}
 
-	windowManager.Initialize(SW_SHOW, clientWidth, clientHeight, L"CG2");
-
+// コマンド関連の初期化
+void EngineCommon::InitializeCommand() {
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-	hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
+	HRESULT hr = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 	assert(SUCCEEDED(hr));
 
 	hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator));
@@ -149,7 +199,10 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 
 	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(hr));
+}
 
+// スワップチェーンの生成
+void EngineCommon::CreateSwapChain() {
 	assert(windowManager.getHwnd() != nullptr);
 	assert(IsWindow(windowManager.getHwnd()));
 
@@ -160,26 +213,32 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = 2;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	hr = dxgiFactory->CreateSwapChainForHwnd(
+
+	HRESULT hr = dxgiFactory->CreateSwapChainForHwnd(
 		commandQueue.Get(), windowManager.getHwnd(), &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain.GetAddressOf())
 	);
 	assert(SUCCEEDED(hr));
+}
 
+// 各種ディスクリプタヒープの生成
+void EngineCommon::CreateDescriptorHeaps() {
 	rtvAllocator_.Initialize(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	srvAllocator_.Initialize(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 	dsvAllocator_.Initialize(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
-	depthStencilResource = CreateDepthStencilTextureResource(device.Get(), clientWidth, clientHeight);
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvAllocator_.GetHeap()->GetCPUDescriptorHandleForHeapStart());
 
 	descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	descriptorSizeRTV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	descriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+}
 
-	hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChainTargets[0]));
+// 深度バッファの生成
+void EngineCommon::CreateDepthBuffer() {
+	depthStencilResource = CreateDepthStencilTextureResource(device.Get(), clientWidth, clientHeight);
+}
+
+// レンダーターゲットビューの初期化
+void EngineCommon::InitializeRenderTargetViews() {
+	HRESULT hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChainTargets[0]));
 	assert(SUCCEEDED(hr));
 	hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainTargets[1]));
 	assert(SUCCEEDED(hr));
@@ -192,35 +251,56 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	device->CreateRenderTargetView(swapChainTargets[0].Get(), &rtvDesc, rtvHandles[0]);
 	rtvHandles[1] = GetCPUDescriptorHandle(rtvAllocator_.GetHeap(), descriptorSizeRTV, 1);
 	device->CreateRenderTargetView(swapChainTargets[1].Get(), &rtvDesc, rtvHandles[1]);
+}
 
-	hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+// 深度ステンシルビューの初期化
+void EngineCommon::InitializeDepthStencilView() {
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvAllocator_.GetHeap()->GetCPUDescriptorHandleForHeapStart());
+}
+
+// フェンスの初期化
+void EngineCommon::InitializeFence() {
+	HRESULT hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 	assert(SUCCEEDED(hr));
 
 	fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	assert(fenceEvent != nullptr);
+}
 
-	CreateDefaultPSO();
-
-	// Initialize XAudio2
-	audioSystem_.Initialize();
-
-	// Initialize DirectInput
-	inputSystem_.Initialize(windowManager.getHinstance(), windowManager.getHwnd());
-
-	// Initialize viewport and scissor rect
+// ビューポート矩形の初期化
+void EngineCommon::InitializeViewport() {
 	viewport.Width = static_cast<float>(clientWidth);
 	viewport.Height = static_cast<float>(clientHeight);
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
+}
 
+// シザリング矩形の初期化
+void EngineCommon::InitializeScissorRect() {
 	scissorRect.left = 0;
 	scissorRect.top = 0;
 	scissorRect.right = static_cast<LONG>(clientWidth);
 	scissorRect.bottom = static_cast<LONG>(clientHeight);
+}
 
+// 光源リソースの初期化
+void EngineCommon::InitializeLight() {
+	directionalLightResource = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
+	directionalLightData = nullptr;
+	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
+	directionalLightData->color = { 1.0f, 1.0f, 1.0f ,1.0f };
+	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
+	directionalLightData->intensity = 1.0f;
+}
+
+// ImGuiの初期化
 #ifdef _DEBUG
+void EngineCommon::InitializeImGui() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -237,15 +317,8 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	);
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->Build();
-#endif
-
-	directionalLightResource = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
-	directionalLightData = nullptr;
-	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
-	directionalLightData->color = { 1.0f, 1.0f, 1.0f ,1.0f };
-	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 1.0f;
 }
+#endif
 
 void EngineCommon::PreDraw() {
 #ifdef _DEBUG
@@ -298,10 +371,14 @@ void EngineCommon::PostDraw() {
 	swapChain->Present(1, 0);
 	fenceValue++;
 	commandQueue->Signal(fence.Get(), fenceValue);
-	if (fence->GetCompletedValue() < fenceValue) {
-		fence->SetEventOnCompletion(fenceValue, fenceEvent);
-		WaitForSingleObject(fenceEvent, INFINITE);
+	if (fence->GetCompletedValue() != fenceValue) {
+		HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		fence->SetEventOnCompletion(fenceValue, event);
+		WaitForSingleObject(event, INFINITE);
+		CloseHandle(event);
 	}
+
+	UpdateFixFPS();
 
 	hr = commandAllocator->Reset();
 	assert(SUCCEEDED(hr));
@@ -465,6 +542,25 @@ D3D12_GPU_DESCRIPTOR_HANDLE EngineCommon::GetGPUDescriptorHandle(ID3D12Descripto
 	D3D12_GPU_DESCRIPTOR_HANDLE handle = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	handle.ptr += index * descriptorSize;
 	return handle;
+}
+
+void  EngineCommon::InitializeFixFPS() {
+	reference_ = std::chrono::steady_clock::now();
+}
+
+void EngineCommon::UpdateFixFPS() {
+	const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.f));
+	const std::chrono::microseconds kMinCheckTime(uint64_t(1000000.0f / 65.f));
+
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	std::chrono::microseconds elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
+
+	if (elapsed < kMinCheckTime) {
+		while (std::chrono::steady_clock::now() - reference_ < kMinTime) {
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+		}
+	}
+	reference_ = std::chrono::steady_clock::now();
 }
 
 //void TempMainFunction() {

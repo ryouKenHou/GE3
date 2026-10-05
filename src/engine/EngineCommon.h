@@ -34,6 +34,8 @@
 #include "DescriptorAllocator.h"
 #include "TextureManager.h"
 
+#include <chrono>
+#include <thread>
 
 class EngineCommon {
 public:
@@ -58,19 +60,36 @@ public:
 
 	// ================= Global Variable Declarations =================
 	//extern std::ofstream logStream;
-	
+
 
 	// ================= Function Declarations =================
 	void CreateDefaultPSO();
+
 	void Initialize(int32_t Width, int32_t Height);
+	void InitializeFixFPS();
+	void UpdateFixFPS();
+
 
 	void PreDraw();
 	void PostDraw();
 	void Finalize();
 
-	
+	void InitializeDevice();
+	void InitializeCommand();
+	void CreateSwapChain();
+	void CreateDescriptorHeaps();
+	void CreateDepthBuffer();
+	void InitializeRenderTargetViews();
+	void InitializeDepthStencilView();
+	void InitializeFence();
+	void InitializeViewport();
+	void InitializeScissorRect();
+	void InitializeLight();
+#ifdef _DEBUG
+	void InitializeImGui();
+#endif
 
-	IDxcBlob* CompileShader(const std::wstring& filePath,const wchar_t* profile,IDxcUtils* dxcUtils,IDxcCompiler3* dxcCompiler,IDxcIncludeHandler* includeHandler);
+	IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, IDxcUtils* dxcUtils, IDxcCompiler3* dxcCompiler, IDxcIncludeHandler* includeHandler);
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, UINT numDescriptors, bool shaderVisible);
 
@@ -103,7 +122,9 @@ public:
 	WindowManager& GetWindowManager() { return windowManager; }
 	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
 
-	private:
+private:
+	std::chrono::steady_clock::time_point reference_;
+
 	DirectionalLight* directionalLightData;
 
 	InputSystem inputSystem_;
@@ -147,7 +168,7 @@ public:
 	HANDLE fenceEvent;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-	
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource;
 
 	ID3DBlob* signatureBlob;
@@ -177,7 +198,7 @@ public:
 	static bool IsKeyReleased(int key) {
 		return EngineCommon::GetInstance().GetInputSystem().IsKeyReleased(key);
 	}
-	
+
 	static void Update() {
 		EngineCommon::GetInstance().GetInputSystem().Update();
 	}
