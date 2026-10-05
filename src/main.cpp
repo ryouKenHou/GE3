@@ -12,6 +12,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	engineCommon->Initialize(kClientWidth, kClientHeight);
 	//EngineCommon::TempMainFunction();
 
+	//assert(false && "assert test");
+
 	Transform cameraTransform{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,-5.0f} };
 	DebugCamera debugCamera;
 	debugCamera.Initialize(kClientWidth, kClientHeight, cameraTransform);
