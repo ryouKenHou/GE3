@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <chrono>
+
 #include <format>
 #include <vector>
 #include <string>
@@ -31,6 +29,9 @@
 #include "../../externals/DirectXTex/DirectXTex.h"
 #include "../../externals/DirectXTex/d3dx12.h"
 
+#include "LogSystem.h"
+#include "PsoManager.h"
+
 
 
 class EngineCommon {
@@ -42,7 +43,6 @@ public:
 		return instance;
 	}
 
-	std::ofstream logStream;
 	// ========================= Structs ========================
 	struct D3DresourceLeakChecker {
 		~D3DresourceLeakChecker() {
@@ -67,8 +67,7 @@ public:
 	void PostDraw();
 	void Finalize();
 
-	void Log(std::ostream& os, const std::string& message);
-	void Log(std::ostream& os, const std::wstring& message);
+	
 
 	IDxcBlob* CompileShader(const std::wstring& filePath,const wchar_t* profile,IDxcUtils* dxcUtils,IDxcCompiler3* dxcCompiler,IDxcIncludeHandler* includeHandler);
 
@@ -107,7 +106,7 @@ public:
 	uint32_t GetDescriptorSizeSRV() { return descriptorSizeSRV; }
 	ID3D12RootSignature* GetRootSignature() { return rootSignature.Get(); }
 	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource.Get(); }
-	ID3D12PipelineState* GetPipelineState() { return pipelineState.Get(); }
+	PSOManager& GetPSOManager() { return psoManager_; }
 
 	private:
 	InputSystem inputSystem_;
@@ -126,7 +125,8 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap;
 
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+	PSOManager psoManager_;
+
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 
 	uint32_t descriptorSizeSRV;
@@ -140,12 +140,9 @@ public:
 	uint64_t fenceValue;
 	HANDLE fenceEvent;
 
-	IDxcBlob* vertexShaderBlob;
-	IDxcBlob* pixelShaderBlob;
-
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap;
-	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilTexture;
+	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource;
 
 	ID3DBlob* signatureBlob;
 	ID3DBlob* errorBlob;

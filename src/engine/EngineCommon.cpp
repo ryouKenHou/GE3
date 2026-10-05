@@ -12,16 +12,7 @@
 
 // ================= Function Definitions =================
 void  EngineCommon::CreateDefaultPSO() {
-	IDxcUtils* dxcUtils = nullptr;
-	IDxcCompiler3* dxcCompiler = nullptr;
-	HREFTYPE hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
-	assert(SUCCEEDED(hr));
-	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
-	assert(SUCCEEDED(hr));
-
-	IDxcIncludeHandler* includeHandler = nullptr;
-	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
-	assert(SUCCEEDED(hr));
+	HREFTYPE hr;
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
 	descriptorRange[0].BaseShaderRegister = 0;
@@ -63,73 +54,14 @@ void  EngineCommon::CreateDefaultPSO() {
 
 	hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
 	if (FAILED(hr)) {
-		Log(logStream, reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		Log::LogMessage(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 		assert(false);
 	}
 
 	hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
 	assert(SUCCEEDED(hr));
 
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
-	inputElementDescs[0].SemanticName = "POSITION";
-	inputElementDescs[0].SemanticIndex = 0;
-	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	inputElementDescs[1].SemanticName = "TEXCOORD";
-	inputElementDescs[1].SemanticIndex = 0;
-	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	inputElementDescs[2].SemanticName = "NORMAL";
-	inputElementDescs[2].SemanticIndex = 0;
-	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-	inputLayoutDesc.pInputElementDescs = inputElementDescs;
-	inputLayoutDesc.NumElements = _countof(inputElementDescs);
-
-	D3D12_BLEND_DESC blendDesc{};
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
-	vertexShaderBlob = CompileShader(L"shader/Object3d.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler, includeHandler);
-	assert(vertexShaderBlob != nullptr);
-
-	pixelShaderBlob = CompileShader(L"shader/Object3d.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
-	assert(pixelShaderBlob != nullptr);
-
-	depthStencilTexture = CreateDepthStencilTextureResource(device.Get(), clientWidth, clientHeight);
-	dsvHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	device->CreateDepthStencilView(depthStencilTexture.Get(), &dsvDesc, dsvHeap->GetCPUDescriptorHandleForHeapStart());
-
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-	graphicsPipelineStateDesc.pRootSignature = rootSignature.Get();
-	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-	graphicsPipelineStateDesc.BlendState = blendDesc;
-	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-	graphicsPipelineStateDesc.NumRenderTargets = 1;
-	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	graphicsPipelineStateDesc.SampleDesc.Count = 1;
-	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-	hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&pipelineState));
-	assert(SUCCEEDED(hr));
+	psoManager_.Initialize(device.Get(), rootSignature.Get());
 }
 
 // ========================= Function Definitions =========================
@@ -140,17 +72,10 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 
 	SetUnhandledExceptionFilter(ExportDump);
 	HREFTYPE hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-	assert(SUCCEEDED(hr));
-	std::filesystem::create_directories("logs");
+	assert(SUCCEEDED(hr));	
 
-	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
-	std::chrono::zoned_time localTime{ std::chrono::current_zone(), nowSeconds };
-	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
-	std::string logFilePath = std::string("logs/") + dateString + ".log";
-	logStream.open(logFilePath);
-
-	Log(logStream, "Hello, DirectX!");
+	Log::Initialize();
+	Log::LogMessage("Hello, DirectX!");
 
 	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	assert(SUCCEEDED(hr));
@@ -169,7 +94,7 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 		assert(SUCCEEDED(hr));
 
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
-			Log(logStream, std::format("Use adapter: {}\n", ConvertString(std::wstring(adapterDesc.Description))));
+			Log::LogMessage(std::format("Use adapter: {}\n", ConvertString(std::wstring(adapterDesc.Description))));
 			break;
 		}
 		useAdapter = nullptr;
@@ -187,12 +112,12 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	for (size_t i = 0; i < std::size(featureLevels); ++i) {
 		hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&device));
 		if (SUCCEEDED(hr)) {
-			Log(logStream, std::format("feature level: {}.\n", featureLevelStrings[i]));
+			Log::LogMessage(std::format("feature level: {}.\n", featureLevelStrings[i]));
 			break;
 		}
 	}
 	assert(device != nullptr);
-	Log(logStream, "Complete create D3D12 device!\n");
+	Log::LogMessage("Complete create D3D12 device!\n");
 
 #ifdef _DEBUG
 	ID3D12InfoQueue* infoQueue = nullptr;
@@ -242,6 +167,14 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 
 	rtvHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	srvDescriptorHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+	
+	dsvHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+	depthStencilResource = CreateDepthStencilTextureResource(device.Get(), clientWidth, clientHeight);
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	device->CreateDepthStencilView(depthStencilResource.Get(), &dsvDesc, dsvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	descriptorSizeRTV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -376,8 +309,6 @@ void EngineCommon::Finalize() {
 	if (errorBlob != nullptr) {
 		errorBlob->Release();
 	}
-	pixelShaderBlob->Release();
-	vertexShaderBlob->Release();
 
 #ifdef _DEBUG
 	ImGui_ImplDX12_Shutdown();
@@ -389,14 +320,7 @@ void EngineCommon::Finalize() {
 	device.Reset();
 }
 
-void EngineCommon::Log(std::ostream& os, const std::string& message) {
-	os << message << std::endl;
-	OutputDebugStringA((message + "\n").c_str());
-}
 
-void EngineCommon::Log(std::ostream& os, const std::wstring& message) {
-	Log(os, ConvertString(message));
-}
 
 LONG WINAPI  EngineCommon::ExportDump(EXCEPTION_POINTERS* exception) {
 	SYSTEMTIME time;
@@ -428,7 +352,7 @@ IDxcBlob* EngineCommon::CompileShader(
 	IDxcIncludeHandler* includeHandler
 ) {
 	// read file
-	Log(logStream, ConvertString(std::format(L"Begin CompileShader: path:{}, profile:{}.\n", filePath, profile)));
+	Log::LogMessage(ConvertString(std::format(L"Begin CompileShader: path:{}, profile:{}.\n", filePath, profile)));
 	IDxcBlobEncoding* shaderSource = nullptr;
 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
 	assert(SUCCEEDED(hr));
@@ -462,7 +386,7 @@ IDxcBlob* EngineCommon::CompileShader(
 	IDxcBlobUtf8* shaderError = nullptr;
 	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
 	if (shaderError != nullptr && shaderError->GetStringLength() > 0) {
-		Log(logStream, shaderError->GetStringPointer());
+		Log::LogMessage(shaderError->GetStringPointer());
 		assert(false);
 	}
 
@@ -471,7 +395,7 @@ IDxcBlob* EngineCommon::CompileShader(
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
 
-	Log(logStream, ConvertString(std::format(L"Compile Succeeded: path:{}, profile:{}.\n", filePath, profile)));
+	Log::LogMessage(ConvertString(std::format(L"Compile Succeeded: path:{}, profile:{}.\n", filePath, profile)));
 	shaderSource->Release();
 	shaderResult->Release();
 	return shaderBlob;
