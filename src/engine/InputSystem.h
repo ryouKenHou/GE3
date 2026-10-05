@@ -8,9 +8,9 @@ class InputSystem {
 		~InputSystem();
 		void Initialize(HINSTANCE hInstance, HWND hwnd);
 		void Update();
-		bool IsKeyPressed(int key);
 		bool IsKeyReleased(int key);
 		bool IsKeyHeld(int key);
+		bool IsKeyTriggered(int key);
 
 		BYTE* getKeyboardState() { return keyboardState; }
 		BYTE* getPrevKeyboardState() { return prevKeyboardState; }

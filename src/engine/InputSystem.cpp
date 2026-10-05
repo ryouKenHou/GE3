@@ -43,7 +43,7 @@ void InputSystem::Update() {
 	}
 }
 
-bool InputSystem::IsKeyPressed(int key) {
+bool InputSystem::IsKeyTriggered(int key) {
 	return keyboardState[key] & 0x80 && !(prevKeyboardState[key] & 0x80);
 }
 
