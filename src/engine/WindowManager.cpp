@@ -75,3 +75,15 @@ void WindowManager::Finalize() {
     }
     CoUninitialize();
 }
+
+bool WindowManager::ProcessMessages() {
+	MSG msg{};
+	while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+		if (msg.message == WM_QUIT) {
+			return true; // Exit the loop if WM_QUIT is received
+		}
+	}
+	return false; // Continue running
+}

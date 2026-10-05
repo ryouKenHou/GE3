@@ -22,4 +22,5 @@ public:
     // Only declarations go here
     void Initialize(int nCmdShow, int width, int height, const wchar_t* windowTitle);
     void Finalize();
+	bool ProcessMessages();
 };

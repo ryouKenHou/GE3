@@ -100,7 +100,7 @@ public:
 	ID3D12RootSignature* GetRootSignature() { return rootSignature.Get(); }
 	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource.Get(); }
 	PSOManager& GetPSOManager() { return psoManager_; }
-
+	WindowManager& GetWindowManager() { return windowManager; }
 	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
 
 	private:
@@ -166,8 +166,8 @@ public:
 
 class Input {
 public:
-	static bool IsKeyPressed(int key) {
-		return EngineCommon::GetInstance().GetInputSystem().IsKeyPressed(key);
+	static bool IsKeyTriggered(int key) {
+		return EngineCommon::GetInstance().GetInputSystem().IsKeyTriggered(key);
 	}
 
 	static bool IsKeyHeld(int key) {

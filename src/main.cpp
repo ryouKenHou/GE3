@@ -43,13 +43,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ball.UsingTemplateModel(1);
 
 	while (true) {
-		MSG msg{};
-		if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-			if (msg.message == WM_QUIT) {
-				break;
-			}
-			TranslateMessage(&msg);
-			DispatchMessageW(&msg);
+		if (engineCommon->GetWindowManager().ProcessMessages()) {
+			break;
 		}
 		else {
 
@@ -61,7 +56,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				OutputDebugStringA("Hit 0.\n");
 			}
 
-			if (Input::IsKeyPressed(DIK_CAPSLOCK)) {
+			if (Input::IsKeyTriggered(DIK_CAPSLOCK)) {
 				OutputDebugStringA("Hit 1.\n");
 			}
 
