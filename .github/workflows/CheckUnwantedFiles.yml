@@ -16,32 +16,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: search unwanted files (bash)
-      run:
-        DIR_CONDITIONS=()
-        for pattern in $UNWANTED_DIR_PATTERNS; do
-          DIR_CONDITIONS+=(-o -iname "$pattern")
-        done
-        unset DIR_CONDITIONS[0]
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        NAME_CONDITIONS=()
-        for pattern in $UNWANTED_NAME_PATTERNS; do
-          NAME_CONDITIONS+=(-o -iname "$pattern")
-        done
-        unset NAME_CONDITIONS[0]
+      - name: Search unwanted files
+        run: |
+          DIR_CONDITIONS=()
+          for pattern in $UNWANTED_DIR_PATTERNS; do
+            DIR_CONDITIONS+=(-o -iname "$pattern")
+          done
+          unset 'DIR_CONDITIONS[0]'
 
-        UNWANTED_LIST=$(find . -path "./git" -prune -o \
-          \( \( "${DIR_CONDITIONS[@]}" \) -a -type d -print -prune \) -o \
-          \( \( "${NAME_CONDITIONS[@]}" \) -a -type f -print \) \
-        )
-        
-        if [-n "$UNWANTED_LIST"]; then
-          echo "::error::Found unwanted file/dir"
-          echo "$UNWANTED_LIST"
-          exit 1
-        fi
+          NAME_CONDITIONS=()
+          for pattern in $UNWANTED_NAME_PATTERNS; do
+            NAME_CONDITIONS+=(-o -iname "$pattern")
+          done
+          unset 'NAME_CONDITIONS[0]'
 
-        echo "repository is clean"
+          UNWANTED_LIST=$(find . -path "./.git" -prune -o \
+            \( \( "${DIR_CONDITIONS[@]}" \) -a -type d -print -prune \) -o \
+            \( \( "${NAME_CONDITIONS[@]}" \) -a -type f -print \) \
+          )
+
+          if [ -n "$UNWANTED_LIST" ]; then
+            echo "::error::Found unwanted files or directories:"
+            echo "$UNWANTED_LIST"
+            exit 1
+          fi
+
+          echo "Repository is clean"
