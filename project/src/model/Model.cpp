@@ -1,5 +1,10 @@
 #include "Model.h"
 
+void Model::Initialize(EngineCommon* engineCommon) {
+	assert(engineCommon != nullptr);
+	engineCommon_ = engineCommon;
+}
+
 void Model::LoadModel(const std::string& directoryPath, const std::string& filename) {
 	modelData = LoadObjFile(directoryPath, filename);
 

@@ -4,7 +4,6 @@
 #include <vector>
 #include <cstdint>
 
-#include <cstdint>
 
 struct DescriptorHandle {
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{ 0 };

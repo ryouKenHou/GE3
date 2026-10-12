@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <vector>
+#include <mutex>
 
 
 struct ChunkHeader {
@@ -50,11 +52,29 @@ public:
 	void Shutdown();
 private:
 
+	class VoiceCallback : public IXAudio2VoiceCallback {
+	public:
+		explicit VoiceCallback(AudioSystem* owner) : owner_(owner) {}
+		void OnStreamEnd() override;
+		void OnVoiceProcessingPassStart(UINT32) override {}
+		void OnVoiceProcessingPassEnd() override {}
+		void OnBufferStart(void*) override {}
+		void OnBufferEnd(void*) override {}
+		void OnLoopEnd(void*) override {}
+		void OnVoiceError(void*, HRESULT) override {}
+	private:
+		AudioSystem* owner_;
+	};
+
 	void SoundPlayWave(const SoundData& soundData);
+	void DestroyFinishedVoice(IXAudio2SourceVoice* voice);
 
 	std::unordered_map<std::string, SoundData> soundRegistry_;
 
     Microsoft::WRL::ComPtr<IXAudio2> xAudio2_;	
     IXAudio2MasteringVoice* masterVoice_;	
 
+	std::unique_ptr<VoiceCallback> voiceCallback_;
+	std::vector<IXAudio2SourceVoice*> activeVoices_;
+	std::mutex voiceMutex_;
 };

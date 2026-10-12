@@ -22,7 +22,7 @@ private:
 
 	ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
-	EngineCommon* engineCommon_ = &EngineCommon::GetInstance();
+	EngineCommon* engineCommon_ = nullptr;
 
 	D3D12_INDEX_BUFFER_VIEW indexBufferView{};
 
@@ -31,6 +31,7 @@ public:
 	TransformationMatrix* wvpData = nullptr;
 	Material* materialData = nullptr;
 
+	void Initialize(EngineCommon* engineCommon);
 	void LoadModel(const std::string& directoryPath, const std::string& filename);
 	void UsingTemplateModel(int type);
 

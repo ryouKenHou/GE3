@@ -96,8 +96,8 @@ class PSOManager {
 public:
     PSOManager() = default;
     ~PSOManager() {
-        pixelShaderBlob->Release();
-        vertexShaderBlob->Release();
+		if (vertexShaderBlob) vertexShaderBlob->Release();
+		if (pixelShaderBlob) pixelShaderBlob->Release();
     }
 
     void Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRootSignature);

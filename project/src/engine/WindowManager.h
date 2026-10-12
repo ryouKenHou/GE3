@@ -7,11 +7,15 @@
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 class WindowManager {
+public:
+    // Class-scoped constants instead of globals defined in main.cpp
+    static constexpr int32_t kClientWidth = 1280;
+    static constexpr int32_t kClientHeight = 720;
 private:
     WNDCLASS windowClass_;
     HWND hwnd_;
-    int32_t clientWidth_;
-    int32_t clientHeight_;
+    int32_t clientWidth_ = kClientWidth;
+    int32_t clientHeight_ = kClientHeight;
 
 public:
     // Inline getters can stay in the header for performance

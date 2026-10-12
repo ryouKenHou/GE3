@@ -2,23 +2,24 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-AudioSystem::AudioSystem() {
-}
+AudioSystem::AudioSystem() {}
 
 AudioSystem::~AudioSystem() {
     Shutdown();
 }
 
 void AudioSystem::Initialize() {
-	HRESULT hr;
+    HRESULT hr;
 
-	hr = XAudio2Create(&xAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
-	assert(SUCCEEDED(hr));
+    hr = XAudio2Create(&xAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    assert(SUCCEEDED(hr));
 
-	hr = xAudio2_->CreateMasteringVoice(&masterVoice_);
-	assert(SUCCEEDED(hr));
+    hr = xAudio2_->CreateMasteringVoice(&masterVoice_);
+    assert(SUCCEEDED(hr));
 
-	LoadAudio("Test", "resources/Alarm01.wav");
+    voiceCallback_ = std::make_unique<VoiceCallback>(this);
+
+    LoadAudio("Test", "resources/Alarm01.wav");
 }
 
 SoundData AudioSystem::SoundLoadWave(const char* filename) {
@@ -111,8 +112,13 @@ void AudioSystem::PlayAudio(const std::string& soundName) {
 void AudioSystem::SoundPlayWave(const SoundData& soundData) {
     HRESULT result;
     IXAudio2SourceVoice* pSourceVoice = nullptr;
-    result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+    result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex, 0, XAUDIO2_DEFAULT_FREQ_RATIO, voiceCallback_.get());
     assert(SUCCEEDED(result));
+
+    {
+        std::lock_guard<std::mutex> lock(voiceMutex_);
+        activeVoices_.push_back(pSourceVoice);
+    }
 
     XAUDIO2_BUFFER buf{};
     buf.pAudioData = soundData.pBuffer;
@@ -123,8 +129,36 @@ void AudioSystem::SoundPlayWave(const SoundData& soundData) {
     result = pSourceVoice->Start();
 }
 
+void AudioSystem::DestroyFinishedVoice(IXAudio2SourceVoice* voice) {
+    {
+        std::lock_guard<std::mutex> lock(voiceMutex_);
+        auto it = std::find(activeVoices_.begin(), activeVoices_.end(), voice);
+        if (it != activeVoices_.end()) {
+            activeVoices_.erase(it);
+        }
+    }
+    voice->DestroyVoice();
+}
+
+void AudioSystem::VoiceCallback::OnStreamEnd() {
+    // NOTE: XAudio2 callbacks fire on the audio thread; DestroyVoice must not be
+    // called from inside the callback that belongs to that same voice.
+    // In production, post this to a worker/queue. For simplicity here we defer
+    // destruction to Shutdown()/next PlayAudio cleanup pass, OR use
+    // IXAudio2SourceVoice::Stop + a periodic cleanup tick instead of calling
+    // DestroyVoice directly in OnStreamEnd.
+}
+
 void AudioSystem::Shutdown() {
     UnloadAll();
+
+    {
+        std::lock_guard<std::mutex> lock(voiceMutex_);
+        for (auto* voice : activeVoices_) {
+            voice->DestroyVoice();
+        }
+        activeVoices_.clear();
+    }
 
     if (masterVoice_) {
         masterVoice_->DestroyVoice();
