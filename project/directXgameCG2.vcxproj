@@ -78,7 +78,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
     </ClCompile>
@@ -86,6 +86,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -116,6 +118,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4049 %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -148,6 +152,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <AdditionalOptions>/ignore:4049 %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <LinkTimeCodeGeneration />
+      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -164,13 +170,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Audio.cpp" />
     <ClCompile Include="src\engine\DescriptorAllocator.cpp" />
     <ClCompile Include="src\engine\EngineCommon.cpp" />
-    <ClCompile Include="externals\imgui\imgui.cpp" />
-    <ClCompile Include="externals\imgui\imgui_demo.cpp" />
-    <ClCompile Include="externals\imgui\imgui_draw.cpp" />
-    <ClCompile Include="externals\imgui\imgui_impl_dx12.cpp" />
-    <ClCompile Include="externals\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="externals\imgui\imgui_tables.cpp" />
-    <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\engine\InputSystem.cpp" />
     <ClCompile Include="src\engine\PsoManager.cpp" />
     <ClCompile Include="src\engine\TextureManager.cpp" />
@@ -184,7 +183,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <Text Include=".editorconfig" />
-    <Text Include="externals\imgui\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\model\Object3D.hpp" />
@@ -199,14 +197,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\sprite\SpriteCommon.h" />
     <ClInclude Include="src\utils\ConvertString.hpp" />
     <ClInclude Include="src\utils\EngineHelper.h" />
-    <ClInclude Include="externals\imgui\imconfig.h" />
-    <ClInclude Include="externals\imgui\imgui.h" />
-    <ClInclude Include="externals\imgui\imgui_impl_dx12.h" />
-    <ClInclude Include="externals\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="externals\imgui\imgui_internal.h" />
-    <ClInclude Include="externals\imgui\imstb_rectpack.h" />
-    <ClInclude Include="externals\imgui\imstb_textedit.h" />
-    <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="src\camera\DebugCamera.h" />
     <ClInclude Include="src\math\Matrix4x4.hpp" />
     <ClInclude Include="src\engine\EngineCommon.h" />
@@ -236,9 +226,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="externals\imgui\.editorconfig" />
-    <None Include="externals\imgui\.gitattributes" />
-    <None Include="externals\imgui\.gitignore" />
     <None Include="shader\Object3d.hlsli" />
   </ItemGroup>
   <ItemGroup>

@@ -23,9 +23,9 @@
 #include "EngineHelper.h"
 #include "Audio.h"
 #include "InputSystem.h"
-#include "../../externals/imgui/imgui.h"
-#include "../../externals/imgui/imgui_impl_win32.h"
-#include "../../externals/imgui/imgui_impl_dx12.h"
+#include "../../externals/imgui/imgui/imgui.h"
+#include "../../externals/imgui/imgui/imgui_impl_win32.h"
+#include "../../externals/imgui/imgui/imgui_impl_dx12.h"
 #include "../../externals/DirectXTex/DirectXTex.h"
 #include "../../externals/DirectXTex/d3dx12.h"
 

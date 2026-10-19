@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{b479991b-1971-47d5-af05-933fad749066}</UniqueIdentifier>
-    </Filter>
     <Filter Include="標頭檔\engine">
       <UniqueIdentifier>{7eafa411-7c53-405f-840c-0f55216c5754}</UniqueIdentifier>
     </Filter>
@@ -50,27 +47,6 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_win32.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_tables.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\WindowManager.cpp">
       <Filter>來源檔案\engine</Filter>
@@ -111,35 +87,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include=".editorconfig" />
-    <Text Include="externals\imgui\LICENSE.txt">
-      <Filter>imgui</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="externals\imgui\imconfig.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_dx12.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_win32.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_rectpack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
     <ClInclude Include="src\engine\Audio.h">
       <Filter>標頭檔\engine</Filter>
     </ClInclude>
@@ -200,15 +149,6 @@
     <FxCompile Include="shader\Object3d.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="externals\imgui\.editorconfig">
-      <Filter>imgui</Filter>
-    </None>
-    <None Include="externals\imgui\.gitattributes">
-      <Filter>imgui</Filter>
-    </None>
-    <None Include="externals\imgui\.gitignore">
-      <Filter>imgui</Filter>
-    </None>
     <None Include="shader\Object3d.hlsli" />
   </ItemGroup>
 </Project>
