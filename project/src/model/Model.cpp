@@ -6,7 +6,7 @@ void Model::Initialize(EngineCommon* engineCommon) {
 }
 
 void Model::LoadModel(const std::string& directoryPath, const std::string& filename) {
-	modelData = LoadObjFile(directoryPath, filename);
+	modelData = ModelManager::GetInstance().Load(directoryPath, filename);
 
 	// == vertex resource for model ==
 	vertexResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
@@ -36,66 +36,15 @@ void Model::LoadModel(const std::string& directoryPath, const std::string& filen
 		modelData.material.textureFilePath,
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),
-		engineCommon_->GetSRVAllocator() // You will need to add this getter to EngineCommon
+		engineCommon_->GetSRVAllocator()
 	);
 
 	// Store ONLY the GPU handle needed for drawing
 	textureSrvGPUHandle = texHandle.gpuHandle;
-
 }
 
 void Model::UsingTemplateModel(int type) {
 	switch (type) {
-	case 0: {
-		vertexResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(VertexData) * 4);
-		vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-		vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
-		vertexBufferView.StrideInBytes = sizeof(VertexData);
-
-		vertexData = nullptr;
-		vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-
-		vertexData[0].position = { 0.0f, 360.f, 0.0f, 1.0f };
-		vertexData[0].texcoord = { 0.0f, 1.0f };
-		vertexData[0].normal = { 0.0f, 0.0f, -1.0f };
-
-		vertexData[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
-		vertexData[1].texcoord = { 0.0f, 0.0f };
-		vertexData[1].normal = { 0.0f, 0.0f, -1.0f };
-
-		vertexData[2].position = { 640.f, 360.f, 0.0f, 1.0f };
-		vertexData[2].texcoord = { 1.0f, 1.0f };
-		vertexData[2].normal = { 0.0f, 0.0f, -1.0f };
-
-		vertexData[3].position = { 640.f, 0.0f, 0.0f, 1.0f };
-		vertexData[3].texcoord = { 1.0f, 0.0f };
-		vertexData[3].normal = { 0.0f, 0.0f, -1.0f };
-
-		indexResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(uint32_t) * 6);
-		indexBufferView.BufferLocation = indexResource->GetGPUVirtualAddress();
-		indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
-		indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-
-		uint32_t* indexData = nullptr;
-		indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
-		indexData[0] = 0; indexData[1] = 1; indexData[2] = 2;
-		indexData[3] = 1; indexData[4] = 3; indexData[5] = 2;
-
-		wvpResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(TransformationMatrix));
-		wvpData = nullptr;
-		wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
-		*wvpData = { Matrix4x4::Identity(), Matrix4x4::Identity() };
-
-		materialResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
-		materialData = nullptr;
-		materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-		materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-		materialData->enableLighting = false;
-		materialData->uvTransform = Matrix4x4::Identity();
-
-		indexCount = 6;
-		break;
-	}
 	case 1: {
 		// == vertex resource for sphere ==
 		const uint32_t kSubdivisoin = 20;
@@ -206,105 +155,3 @@ void Model::Draw() {
 	}
 	
 }
-
-MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
-	MaterialData materialData;
-	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
-		std::string identifier;
-		std::istringstream s(line);
-		s >> identifier;
-
-		if (identifier == "map_Kd") {
-			std::string textureFilename;
-			s >> textureFilename;
-
-			materialData.textureFilePath = directoryPath + "/" + textureFilename;
-		}
-
-	}
-
-	return materialData;
-}
-
-ModelData  Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
-	ModelData modelData;
-	std::vector<Vector4> positions;
-	std::vector<Vector3> normals;
-	std::vector<Vector2> texcoords;
-	std::string line;
-
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
-		std::string identifier;
-		std::istringstream s(line);
-		s >> identifier;
-
-		if (identifier == "v") {
-			Vector4 position;
-			s >> position.x >> position.y >> position.z;
-			position.w = 1.0f;
-			positions.push_back(position);
-		}
-		else if (identifier == "vt") {
-			Vector2 texcoord;
-			s >> texcoord.x >> texcoord.y;
-
-			texcoord.y = 1.0f - texcoord.y; // Invert the y-coordinate of the texture coordinate
-
-			texcoords.push_back(texcoord);
-		}
-		else if (identifier == "vn") {
-			Vector3 normal;
-			s >> normal.x >> normal.y >> normal.z;
-			normals.push_back(normal);
-		}
-		else if (identifier == "f") {
-			VertexData triangle[3];
-
-			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-				std::string vertexDefinition;
-				s >> vertexDefinition;
-
-				std::istringstream v(vertexDefinition);
-				uint32_t elementIndices[3];
-				for (int32_t element = 0; element < 3; ++element) {
-					std::string index;
-					if (!std::getline(v, index, '/') || index.empty()) {
-						elementIndices[element] = 0; // 0 means "not present"; adjust downstream usage accordingly
-						continue;
-					}
-					elementIndices[element] = std::stoi(index);
-				}
-
-				Vector4 position = positions[elementIndices[0] - 1];
-				Vector2 texcoord = texcoords[elementIndices[1] - 1];
-				Vector3 normal = normals[elementIndices[2] - 1];
-
-				position.x *= -1.0f;
-				normal.x *= -1.0f;
-
-				triangle[faceVertex] = { position, texcoord, normal };
-			}
-
-
-
-			modelData.vertices.push_back(triangle[2]);
-			modelData.vertices.push_back(triangle[1]);
-			modelData.vertices.push_back(triangle[0]);
-
-		}
-		else if (identifier == "mtllib") {
-			std::string materialFilename;
-			s >> materialFilename;
-			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
-		}
-	}
-	return modelData;
-}
-

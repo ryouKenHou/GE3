@@ -1,15 +1,14 @@
 #pragma once
 
 #include "EngineCommon.h"
-
-
+#include "ModelManager.h"
 
 class Model {
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource;
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;	
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
 	VertexData* vertexData = nullptr;
-	
+
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
 	ModelData modelData;
@@ -17,10 +16,6 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvGPUHandle{};
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResource = nullptr;
-
-	MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
-
-	ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
 	EngineCommon* engineCommon_ = nullptr;
 

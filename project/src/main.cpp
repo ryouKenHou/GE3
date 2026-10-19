@@ -1,15 +1,21 @@
 #include "EngineCommon.h"
-#include "Model.h"
+#include "Object3D.hpp"
+#include "Sprite.h"
 #include <memory>
 
 // ========================= Entry point =======================
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	EngineCommon* engineCommon = &EngineCommon::GetInstance();
+	SpriteCommon* spriteCommon = new SpriteCommon();
+
+
 
 	int32_t kClientWidth = WindowManager::kClientWidth;
 	int32_t kClientHeight = WindowManager::kClientHeight;
 
 	engineCommon->Initialize(kClientWidth, kClientHeight);
+
+	spriteCommon->Initialize(engineCommon);
 
 	Transform cameraTransform{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,-5.0f} };
 	std::unique_ptr<DebugCamera> debugCamera = std::make_unique<DebugCamera>();
@@ -31,13 +37,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	bool useMonsterBall = 0;
 
 	// Dynamically allocated with new/delete to satisfy the requirement explicitly.
-	Model* a = new Model();
-	a->Initialize(engineCommon);
-	a->LoadModel("resources/05_02", "plane.obj");
+	Model* model = new Model();
+	model->Initialize(engineCommon);
+	model->LoadModel("resources/05_02", "plane.obj");
 
-	std::unique_ptr<Model> b = std::make_unique<Model>();
+	Object3D* a = new Object3D();
+	a->Initialize(engineCommon);
+	a->SetModel(model);
+
+	std::unique_ptr<Sprite> b = std::make_unique<Sprite>();
 	b->Initialize(engineCommon);
-	b->UsingTemplateModel(0);
+	b->SetTexture("resources/monsterBall.png");
 
 	std::unique_ptr<Model> ball = std::make_unique<Model>();
 	ball->Initialize(engineCommon);
@@ -93,6 +103,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ball->materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransformBall.scale, uvTransformBall.rotation, uvTransformBall.translation);
 
 			engineCommon->PreDraw();
+			
 
 			DirectionalLight* directionalLightData = engineCommon->GetDirectionalLightData();
 
@@ -155,6 +166,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			if (showSprite) b->Draw();
 			if (showBall) ball->Draw();
 
+			spriteCommon->PreDraw();
 			engineCommon->PostDraw();
 
 		}
@@ -162,6 +174,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// Explicit new/delete pair for `a` to demonstrate manual dynamic management.
 	delete a;
+	delete spriteCommon;
+	delete model;
 
 	engineCommon->Finalize();
 

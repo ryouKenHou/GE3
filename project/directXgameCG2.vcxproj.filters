@@ -16,6 +16,36 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{b479991b-1971-47d5-af05-933fad749066}</UniqueIdentifier>
     </Filter>
+    <Filter Include="標頭檔\engine">
+      <UniqueIdentifier>{7eafa411-7c53-405f-840c-0f55216c5754}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="標頭檔\sprite">
+      <UniqueIdentifier>{51073e4e-4a62-417c-964c-7b21ac9d307e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="標頭檔\camera">
+      <UniqueIdentifier>{e39e00a1-7b3f-4452-b191-2c7069cd87a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="標頭檔\math">
+      <UniqueIdentifier>{53480a84-0dc6-4a13-9a02-ed4b254c9ab8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="標頭檔\utils">
+      <UniqueIdentifier>{9ee69377-1723-4d6a-be8f-43dd5e93ffc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="標頭檔\model">
+      <UniqueIdentifier>{d00fd260-2843-46c3-b969-269324eb326f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="來源檔案\engine">
+      <UniqueIdentifier>{4a0969e0-ace8-4bcd-a493-8c7d78da71f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="來源檔案\spirte">
+      <UniqueIdentifier>{f4b62373-5d99-4417-a7f1-178d8e4a4922}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="來源檔案\model">
+      <UniqueIdentifier>{e549de59-fc15-4bb8-be34-c05ae65b3d4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="來源檔案\camera">
+      <UniqueIdentifier>{6d6880e4-a975-4ea5-9426-819478c6e6de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -42,31 +72,40 @@
     <ClCompile Include="externals\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\camera\DebugCamera.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
     <ClCompile Include="src\engine\WindowManager.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\EngineCommon.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\model\Model.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\Audio.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\InputSystem.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\PsoManager.cpp">
-      <Filter>來源檔案</Filter>
-    </ClCompile>
-    <ClCompile Include="src\engine\DescriptorAllocator.cpp">
-      <Filter>來源檔案</Filter>
+      <Filter>來源檔案\engine</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\TextureManager.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\PsoManager.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\InputSystem.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\EngineCommon.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\DescriptorAllocator.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Audio.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sprite\SpriteCommon.cpp">
+      <Filter>來源檔案\spirte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model\Model.cpp">
+      <Filter>來源檔案\model</Filter>
+    </ClCompile>
+    <ClCompile Include="src\camera\DebugCamera.cpp">
+      <Filter>來源檔案\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sprite\Sprite.cpp">
+      <Filter>來源檔案\spirte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model\ModelManager.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,15 +116,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\utils\ConvertString.hpp">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\math\Matrix4x4.hpp">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\math\Vector3.hpp">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
     <ClInclude Include="externals\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
@@ -110,37 +140,58 @@
     <ClInclude Include="externals\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\camera\DebugCamera.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\engine\EngineCommon.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\engine\WindowManager.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\model\Model.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\utils\EngineHelper.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
     <ClInclude Include="src\engine\Audio.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\engine\InputSystem.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\engine\PsoManager.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
-    <ClInclude Include="src\engine\LogSystem.h">
-      <Filter>標頭檔</Filter>
+      <Filter>標頭檔\engine</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\DescriptorAllocator.h">
-      <Filter>標頭檔</Filter>
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\EngineCommon.h">
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\LogSystem.h">
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\InputSystem.h">
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\PsoManager.h">
+      <Filter>標頭檔\engine</Filter>
     </ClInclude>
     <ClInclude Include="src\engine\TextureManager.h">
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\WindowManager.h">
+      <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera\DebugCamera.h">
+      <Filter>標頭檔\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\ConvertString.hpp">
+      <Filter>標頭檔\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\EngineHelper.h">
+      <Filter>標頭檔\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\Matrix4x4.hpp">
+      <Filter>標頭檔\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\Vector3.hpp">
+      <Filter>標頭檔\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sprite\SpriteCommon.h">
+      <Filter>標頭檔\sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\Model.h">
+      <Filter>標頭檔\model</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sprite\Sprite.h">
+      <Filter>標頭檔\sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\ModelManager.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\Object3D.hpp">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

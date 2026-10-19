@@ -105,7 +105,11 @@ public:
     // Fetch a PSO for drawing
     ID3D12PipelineState* GetPSO(PSOType type) const;
     ID3D12PipelineState* GetPSO(const std::string& customName) const;
+	IDxcBlob* GetVertexShaderBlob() const { return vertexShaderBlob; }
+	IDxcBlob* GetPixelShaderBlob() const { return pixelShaderBlob; }
 
+    ID3D12PipelineState* CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount);
+    ID3D12PipelineState* CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount);
 private:
     std::unordered_map<PSOType, Microsoft::WRL::ComPtr<ID3D12PipelineState>> enumPipelines_;
     std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> customPipelines_;

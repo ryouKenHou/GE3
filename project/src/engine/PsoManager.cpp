@@ -120,3 +120,27 @@ IDxcBlob* PSOManager::CompileShader(
     shaderResult->Release();
     return shaderBlob;
 }
+
+ID3D12PipelineState* PSOManager::CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount) {
+	PSOBuilder builder;
+	builder.SetRootSignature(rootSig)
+		.SetShaders(vsBlob, psBlob)
+		.SetInputLayout(inputLayout, inputLayoutCount);
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> pso = builder.Build(device);
+	if (pso) {
+		customPipelines_[name] = pso;
+	}
+	return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount) {
+	PSOBuilder builder;
+	builder.SetRootSignature(rootSig)
+		.SetShaders(vsBlob, psBlob)
+		.SetInputLayout(inputLayout, inputLayoutCount);
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> pso = builder.Build(device);
+	if (pso) {
+		enumPipelines_[type] = pso;
+	}
+	return pso.Get();
+}
