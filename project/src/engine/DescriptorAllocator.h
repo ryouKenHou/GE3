@@ -23,6 +23,9 @@ public:
     DescriptorHandle Allocate();
     void Free(DescriptorHandle& handle);
 
+    // Returns true if there's room for at least one more descriptor
+    bool HasSpace() const { return !freeIndices_.empty() || currentOffset_ < capacity_; }
+
     ID3D12DescriptorHeap* GetHeap() const { return heap_.Get(); }
 
 private:

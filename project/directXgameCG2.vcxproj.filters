@@ -84,6 +84,9 @@
     <ClCompile Include="src\model\ModelManager.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
+    <ClCompile Include="src\engine\particleManager.cpp">
+      <Filter>來源檔案\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include=".editorconfig" />
@@ -138,10 +141,13 @@
       <Filter>標頭檔\sprite</Filter>
     </ClInclude>
     <ClInclude Include="src\model\ModelManager.h">
-      <Filter>標頭檔</Filter>
+      <Filter>標頭檔\model</Filter>
     </ClInclude>
     <ClInclude Include="src\model\Object3D.hpp">
-      <Filter>標頭檔</Filter>
+      <Filter>標頭檔\model</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\particleManager.h">
+      <Filter>標頭檔\engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

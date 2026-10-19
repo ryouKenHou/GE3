@@ -1,6 +1,7 @@
 #include "EngineCommon.h"
 #include "Object3D.hpp"
 #include "Sprite.h"
+#include "particleManager.h"
 #include <memory>
 
 // ========================= Entry point =======================

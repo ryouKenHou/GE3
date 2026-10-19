@@ -6,20 +6,28 @@ DescriptorHandle TextureManager::Load(const std::string& filePath, ID3D12Device*
 		return it->second.srvHandle;
 	}
 
-	DirectX::ScratchImage mipImages = LoadTexture(filePath);
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	// Check SRV heap capacity BEFORE doing any GPU work for this texture
+	if (!srvAllocator.HasSpace()) {
+		assert(false && "SRV Descriptor Heap is full: cannot load more textures!");
+		return DescriptorHandle{}; // invalid handle, caller should check IsValid()
+	}
+
+	DirectX::ScratchImage mipImages2 = LoadTexture(filePath);
+	const DirectX::TexMetadata& metadata2 = mipImages2.GetMetadata();
 
 	textures_[filePath] = TextureData{};
-	textures_[filePath].resource = CreateTextureResource(device, metadata);
-	textures_[filePath].intermediateResource = UploadTextureData(textures_[filePath].resource.Get(), mipImages, device, cmdList);
+	textures_[filePath].resource = CreateTextureResource(device, metadata2);
+	textures_[filePath].intermediateResource = UploadTextureData(textures_[filePath].resource.Get(), mipImages2, device, cmdList);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc2{};
+	srvDesc2.Format = metadata2.format;
+	srvDesc2.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc2.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc2.Texture2D.MipLevels = UINT(metadata2.mipLevels);
 
 	textures_[filePath].srvHandle = srvAllocator.Allocate();
-	device->CreateShaderResourceView(textures_[filePath].resource.Get(), &srvDesc, textures_[filePath].srvHandle.cpuHandle);
+	assert(textures_[filePath].srvHandle.IsValid() && "Failed to allocate SRV descriptor for texture!");
+
+	device->CreateShaderResourceView(textures_[filePath].resource.Get(), &srvDesc2, textures_[filePath].srvHandle.cpuHandle);
 	return textures_[filePath].srvHandle;
 }
