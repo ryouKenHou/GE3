@@ -65,6 +65,11 @@ public:
         return *this;
     }
 
+    PSOBuilder& DisableDepthWrite() {
+        desc_.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+        return *this;
+    }
+
     // Preset Helper: Wireframe Rendering
     PSOBuilder& SetWireframe() {
         desc_.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;

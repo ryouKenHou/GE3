@@ -25,4 +25,9 @@ public:
 	Matrix4x4 getViewProjectionMatrix() const {
 		return viewMatrix_ * projectionMatrix_ ;
 	}
+
+
+	Matrix4x4 GetBillboardMatrix() const {
+		return matRot_;
+	}
 };

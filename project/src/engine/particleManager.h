@@ -19,19 +19,20 @@ public:
 		return instance;
 	}
 
-	// maxParticles pre-allocates a pool of constant buffers so Emit() never creates GPU resources at runtime
 	void Initialize(EngineCommon* engineCommon, uint32_t maxParticles = 256);
 
 	void SetTexture(const std::string& textureFilePath);
 
-	// Spawns up to `count` new particles at `position` (ignored if the pool is full)
+	// Spawns up to `count` new particles at `position` using the current editor parameters
 	void Emit(const Vector3& position, uint32_t count = 1);
 
-	// Advances simulation and refreshes each alive particle's WVP constant buffer.
-	// viewProjection should be camera view * projection (billboard rotation uses billboardMatrix).
 	void Update(float deltaTime, const Matrix4x4& billboardMatrix, const Matrix4x4& viewProjection);
 
 	void Draw();
+
+	// Simple ImGui panel to tweak emission parameters live. Call once per frame between
+	// ImGui::NewFrame() and ImGui::Render().
+	void DrawImGui();
 
 private:
 	ParticleManager() = default;
@@ -45,7 +46,6 @@ private:
 
 	EngineCommon* engineCommon_ = nullptr;
 
-	// Shared geometry: a single camera-facing quad reused by every particle
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
@@ -55,10 +55,27 @@ private:
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvGPUHandle_{};
 
 	std::vector<ParticleData> particles_;
-	std::vector<GPUSlot> gpuSlots_; // pool, size == maxParticles_
+	std::vector<GPUSlot> gpuSlots_;
 	uint32_t maxParticles_ = 0;
 
 	std::mt19937 randomEngine_{ std::random_device{}() };
 
 	void CreateQuadMesh();
+
+	// ---------- Editor-controlled emission parameters ----------
+	Vector3 spawnPosition_{ 0.0f, 0.0f, 0.0f };
+	Vector3 velocityMin_{ -1.0f, -1.0f, -1.0f };
+	Vector3 velocityMax_{ 1.0f, 1.0f, 1.0f };
+	float lifeTimeMin_ = 1.0f;
+	float lifeTimeMax_ = 3.0f;
+	float scaleMin_ = 0.5f;
+	float scaleMax_ = 1.0f;
+	Vector4 startColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+	bool continuousEmit_ = false;
+	float emitRate_ = 10.0f;       // particles per second, used when continuousEmit_ is on
+	float emitAccumulator_ = 0.0f;
+	int emitCountManual_ = 10;     // used by the "Emit Now" button
+
+	char textureFilePathBuf_[256] = "resources/05_02/circle.png";
 };

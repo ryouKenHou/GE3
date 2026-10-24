@@ -54,6 +54,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ball->Initialize(engineCommon);
 	ball->UsingTemplateModel(1);
 
+	ParticleManager::GetInstance().Initialize(engineCommon);
+	ParticleManager::GetInstance().SetTexture("resources/circle.png");
+	auto lastFrameTime = std::chrono::steady_clock::now();
+
 	while (true) {
 		if (engineCommon->GetWindowManager().ProcessMessages()) {
 			break;
@@ -80,6 +84,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 			frameCount++;
 
+			auto currentFrameTime = std::chrono::steady_clock::now();
+			float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
+			lastFrameTime = currentFrameTime;
 
 			// plane
 			Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform.scale, transform.rotation, transform.translation);
@@ -160,12 +167,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 
 			ImGui::End();
-
-			ImGui::Render();
 #endif
 			if (showPlane) a->Draw();
 			if (showSprite) b->Draw();
 			if (showBall) ball->Draw();
+
+			ParticleManager::GetInstance().Update(
+				deltaTime,
+				debugCamera->GetBillboardMatrix(),
+				debugCamera->getViewProjectionMatrix()
+			);
+			ParticleManager::GetInstance().Draw();
+
+#ifdef _DEBUG
+			ParticleManager::GetInstance().DrawImGui();
+			ImGui::Render();
+#endif
 
 			spriteCommon->PreDraw();
 			engineCommon->PostDraw();
