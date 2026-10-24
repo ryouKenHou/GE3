@@ -136,6 +136,10 @@ void Model::UsingTemplateModel(int type) {
 }
 
 void Model::Draw() {
+	DrawInternal(materialResource->GetGPUVirtualAddress(), wvpResource->GetGPUVirtualAddress());
+}
+
+void Model::DrawInternal(D3D12_GPU_VIRTUAL_ADDRESS materialGPUAddress, D3D12_GPU_VIRTUAL_ADDRESS wvpGPUAddress) {
 	engineCommon_->GetCommandList()->SetGraphicsRootSignature(engineCommon_->GetRootSignature());
 	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Opaque3D));
 	if (indexResource) {
@@ -143,8 +147,8 @@ void Model::Draw() {
 	}
 	engineCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 	engineCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialGPUAddress);
+	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpGPUAddress);
 	engineCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, engineCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
 	engineCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvGPUHandle);
 	if (indexResource) {
@@ -153,5 +157,4 @@ void Model::Draw() {
 	else {
 		engineCommon_->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 	}
-	
 }
