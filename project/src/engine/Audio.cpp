@@ -2,10 +2,15 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-AudioSystem::AudioSystem() {}
+AudioSystem::AudioSystem() {
+    // Initialize Media Foundation
+    HRESULT hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
+    assert(SUCCEEDED(hr));
+}
 
 AudioSystem::~AudioSystem() {
     Shutdown();
+    MFShutdown();
 }
 
 void AudioSystem::Initialize() {
@@ -22,45 +27,82 @@ void AudioSystem::Initialize() {
     LoadAudio("Test", "resources/Alarm01.wav");
 }
 
-SoundData AudioSystem::SoundLoadWave(const char* filename) {
-	// Implementation for loading a WAV file into SoundData
-    std::ifstream file;
-    file.open(filename, std::ios_base::binary);
-    assert(file.is_open());
+SoundData AudioSystem::SoundLoadMedia(const std::string& filename) {
+    HRESULT hr;
 
-    RiffHeader riff;
-    file.read((char*)&riff, sizeof(riff));
-    if (strncmp(riff.chunk.id, "RIFF", 4) != 0) { assert(0); }
-    if (strncmp(riff.type, "WAVE", 4) != 0) { assert(0); }
+    // Convert string path to wide string for Media Foundation
+    int wideLen = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, nullptr, 0);
+    std::wstring wfilename(wideLen, 0);
+    MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, &wfilename[0], wideLen);
 
-    FormatChunk format = {};
-    file.read((char*)&format, sizeof(ChunkHeader));
-    while (strncmp(format.chunk.id, "fmt ", 4) != 0) {
-        file.seekg(format.chunk.size, std::ios_base::cur);
-        file.read((char*)&format, sizeof(ChunkHeader));
-        assert(!file.eof());
+    // 1. Create Source Reader
+    Microsoft::WRL::ComPtr<IMFSourceReader> pSourceReader;
+    hr = MFCreateSourceReaderFromURL(wfilename.c_str(), nullptr, &pSourceReader);
+    assert(SUCCEEDED(hr));
+
+    // 2. Configure output format to uncompressed PCM
+    Microsoft::WRL::ComPtr<IMFMediaType> pMediaType;
+    hr = MFCreateMediaType(&pMediaType);
+    assert(SUCCEEDED(hr));
+
+    hr = pMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+    assert(SUCCEEDED(hr));
+
+    hr = pMediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+    assert(SUCCEEDED(hr));
+
+    hr = pSourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, pMediaType.Get());
+    assert(SUCCEEDED(hr));
+
+    // 3. Get complete audio format
+    Microsoft::WRL::ComPtr<IMFMediaType> pOutputMediaType;
+    hr = pSourceReader->GetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, &pOutputMediaType);
+    assert(SUCCEEDED(hr));
+
+    WAVEFORMATEX* pWaveFormat = nullptr;
+    UINT32 waveFormatSize = 0;
+    hr = MFCreateWaveFormatExFromMFMediaType(pOutputMediaType.Get(), &pWaveFormat, &waveFormatSize);
+    assert(SUCCEEDED(hr));
+
+    // 4. Read audio sample data into a dynamic buffer
+    std::vector<BYTE> audioData;
+    while (true) {
+        Microsoft::WRL::ComPtr<IMFSample> pSample;
+        DWORD dwFlags = 0;
+        hr = pSourceReader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &dwFlags, nullptr, &pSample);
+        assert(SUCCEEDED(hr));
+
+        if (dwFlags & MF_SOURCE_READERF_ENDOFSTREAM) {
+            break;
+        }
+
+        if (pSample) {
+            Microsoft::WRL::ComPtr<IMFMediaBuffer> pBuffer;
+            hr = pSample->ConvertToContiguousBuffer(&pBuffer);
+            assert(SUCCEEDED(hr));
+
+            BYTE* pAudioBytes = nullptr;
+            DWORD currentLength = 0;
+            hr = pBuffer->Lock(&pAudioBytes, nullptr, &currentLength);
+            assert(SUCCEEDED(hr));
+
+            size_t oldSize = audioData.size();
+            audioData.resize(oldSize + currentLength);
+            memcpy(audioData.data() + oldSize, pAudioBytes, currentLength);
+
+            hr = pBuffer->Unlock();
+            assert(SUCCEEDED(hr));
+        }
     }
 
-    assert(format.chunk.size <= sizeof(format.fmt));
-    file.read((char*)&format.fmt, format.chunk.size);
-
-    ChunkHeader data;
-    file.read((char*)&data, sizeof(data));
-    if (strncmp(data.id, "JUNK", 4) == 0) {
-        file.seekg(data.size, std::ios_base::cur);
-        file.read((char*)&data, sizeof(data));
-    }
-
-    if (strncmp(data.id, "data", 4) != 0) { assert(0); }
-
-    char* pBuffer = new char[data.size];
-    file.read(pBuffer, data.size);
-    file.close();
-
+    // 5. Populate SoundData structure
     SoundData soundData = {};
-    soundData.wfex = format.fmt;
-    soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
-    soundData.bufferSize = data.size;
+    soundData.wfex = *pWaveFormat;
+    CoTaskMemFree(pWaveFormat);
+
+    soundData.bufferSize = static_cast<unsigned int>(audioData.size());
+    soundData.pBuffer = new BYTE[soundData.bufferSize];
+    memcpy(soundData.pBuffer, audioData.data(), soundData.bufferSize);
 
     return soundData;
 }
@@ -68,7 +110,7 @@ SoundData AudioSystem::SoundLoadWave(const char* filename) {
 void AudioSystem::UnloadSound(const std::string& key) {
     auto it = soundRegistry_.find(key);
     if (it != soundRegistry_.end()) {
-        SoundUnload(&it->second); // Free PCM buffer memory
+        SoundUnload(&it->second);
         soundRegistry_.erase(it);
     }
 }
@@ -88,25 +130,24 @@ void AudioSystem::SoundUnload(SoundData* soundData) {
 }
 
 bool AudioSystem::LoadAudio(const std::string& soundName, const std::string& filePath) {
-    // Avoid re-loading if already cached
     if (soundRegistry_.find(soundName) != soundRegistry_.end()) {
         return true;
     }
 
-    // Load sound data from file (your wave loading logic)
-    SoundData data = SoundLoadWave(filePath.c_str());
+    // Uses Media Foundation loader supporting both WAV and compressed files like MP3
+    SoundData data = SoundLoadMedia(filePath);
     if (data.pBuffer == nullptr) {
-        return false; 
+        return false;
     }
-	soundRegistry_[soundName] = data;
+    soundRegistry_[soundName] = data;
     return true;
 }
 
 void AudioSystem::PlayAudio(const std::string& soundName) {
-	auto it = soundRegistry_.find(soundName);
-	if (it != soundRegistry_.end()) {
-		SoundPlayWave(it->second);
-	}
+    auto it = soundRegistry_.find(soundName);
+    if (it != soundRegistry_.end()) {
+        SoundPlayWave(it->second);
+    }
 }
 
 void AudioSystem::SoundPlayWave(const SoundData& soundData) {
@@ -140,14 +181,7 @@ void AudioSystem::DestroyFinishedVoice(IXAudio2SourceVoice* voice) {
     voice->DestroyVoice();
 }
 
-void AudioSystem::VoiceCallback::OnStreamEnd() {
-    // NOTE: XAudio2 callbacks fire on the audio thread; DestroyVoice must not be
-    // called from inside the callback that belongs to that same voice.
-    // In production, post this to a worker/queue. For simplicity here we defer
-    // destruction to Shutdown()/next PlayAudio cleanup pass, OR use
-    // IXAudio2SourceVoice::Stop + a periodic cleanup tick instead of calling
-    // DestroyVoice directly in OnStreamEnd.
-}
+void AudioSystem::VoiceCallback::OnStreamEnd() {}
 
 void AudioSystem::Shutdown() {
     UnloadAll();
