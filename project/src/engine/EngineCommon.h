@@ -171,8 +171,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource;
 
-	ID3DBlob* signatureBlob;
-	ID3DBlob* errorBlob;
+	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
 
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;

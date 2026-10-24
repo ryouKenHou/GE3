@@ -100,21 +100,20 @@ enum class PSOType {
 class PSOManager {
 public:
     PSOManager() = default;
-    ~PSOManager() {
-		if (vertexShaderBlob) vertexShaderBlob->Release();
-		if (pixelShaderBlob) pixelShaderBlob->Release();
-    }
+    ~PSOManager() = default;
 
     void Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRootSignature);
 
     // Fetch a PSO for drawing
     ID3D12PipelineState* GetPSO(PSOType type) const;
     ID3D12PipelineState* GetPSO(const std::string& customName) const;
-	IDxcBlob* GetVertexShaderBlob() const { return vertexShaderBlob; }
-	IDxcBlob* GetPixelShaderBlob() const { return pixelShaderBlob; }
+	IDxcBlob* GetVertexShaderBlob() const { return vertexShaderBlob.Get(); }
+	IDxcBlob* GetPixelShaderBlob() const { return pixelShaderBlob.Get(); }
 
-    ID3D12PipelineState* CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount);
-    ID3D12PipelineState* CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount);
+    ID3D12PipelineState* CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
+        bool enableAlphaBlending , bool disableDepthWrite);
+    ID3D12PipelineState* CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
+        bool enableAlphaBlending , bool disableDepthWrite);
 private:
     std::unordered_map<PSOType, Microsoft::WRL::ComPtr<ID3D12PipelineState>> enumPipelines_;
     std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> customPipelines_;
@@ -128,6 +127,6 @@ private:
     );
 
 
-    IDxcBlob* vertexShaderBlob;
-    IDxcBlob* pixelShaderBlob;
+    Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob;
+    Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob;
 };

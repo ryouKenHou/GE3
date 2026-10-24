@@ -1,12 +1,6 @@
 #include "SpriteCommon.h"
 
 SpriteCommon::SpriteCommon() : rootSigiture_(nullptr), pso_(nullptr), engineCommon_(nullptr) {}
-SpriteCommon::~SpriteCommon() {
-	if (rootSigiture_) {
-		rootSigiture_->Release();
-		rootSigiture_ = nullptr;
-	}
-}
 
 void SpriteCommon::Initialize(EngineCommon* engineCommon) {
 	engineCommon_ = engineCommon;

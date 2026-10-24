@@ -38,14 +38,14 @@ void PSOManager::Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRo
     // 1. Create Default 3D Opaque PSO
     enumPipelines_[PSOType::Opaque3D] = PSOBuilder()
         .SetRootSignature(defaultRootSig)
-        .SetShaders(vertexShaderBlob, pixelShaderBlob) // Pass compiled shader blobs
+        .SetShaders(vertexShaderBlob.Get(), pixelShaderBlob.Get()) // Pass compiled shader blobs
         .SetInputLayout(inputElementDescs, _countof(inputElementDescs))
         .Build(device);
 
     // 2. Create Wireframe PSO (Reuses same shaders/root signature, just tweaks rasterizer)
     enumPipelines_[PSOType::Wireframe] = PSOBuilder()
         .SetRootSignature(defaultRootSig)
-        .SetShaders(vertexShaderBlob, pixelShaderBlob)
+        .SetShaders(vertexShaderBlob.Get(), pixelShaderBlob.Get())
         .SetInputLayout(inputElementDescs, _countof(inputElementDescs))
         .SetWireframe()
         .Build(device);
@@ -53,7 +53,7 @@ void PSOManager::Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRo
     // 3. Create Transparent 3D PSO
     enumPipelines_[PSOType::Transparent3D] = PSOBuilder()
         .SetRootSignature(defaultRootSig)
-        .SetShaders(vertexShaderBlob, pixelShaderBlob)
+        .SetShaders(vertexShaderBlob.Get(), pixelShaderBlob.Get())
         .SetInputLayout(inputElementDescs, _countof(inputElementDescs))
         .EnableAlphaBlending()
         .DisableDepthWrite()
@@ -122,11 +122,15 @@ IDxcBlob* PSOManager::CompileShader(
     return shaderBlob;
 }
 
-ID3D12PipelineState* PSOManager::CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount) {
+ID3D12PipelineState* PSOManager::CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
+    bool enableAlphaBlending = false, bool disableDepthWrite = false) {
 	PSOBuilder builder;
 	builder.SetRootSignature(rootSig)
 		.SetShaders(vsBlob, psBlob)
 		.SetInputLayout(inputLayout, inputLayoutCount);
+    if (enableAlphaBlending) builder.EnableAlphaBlending();
+    if (disableDepthWrite) builder.DisableDepthWrite();
+
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pso = builder.Build(device);
 	if (pso) {
 		customPipelines_[name] = pso;
@@ -134,11 +138,16 @@ ID3D12PipelineState* PSOManager::CreatePSO(const std::string& name, ID3D12Device
 	return pso.Get();
 }
 
-ID3D12PipelineState* PSOManager::CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount) {
+ID3D12PipelineState* PSOManager::CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
+    bool enableAlphaBlending = false, bool disableDepthWrite = false) {
 	PSOBuilder builder;
 	builder.SetRootSignature(rootSig)
 		.SetShaders(vsBlob, psBlob)
 		.SetInputLayout(inputLayout, inputLayoutCount);
+
+    if (enableAlphaBlending) builder.EnableAlphaBlending();
+    if (disableDepthWrite) builder.DisableDepthWrite();
+
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pso = builder.Build(device);
 	if (pso) {
 		enumPipelines_[type] = pso;

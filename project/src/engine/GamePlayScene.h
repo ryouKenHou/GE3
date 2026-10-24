@@ -17,7 +17,7 @@ public:
 
 private:
     EngineCommon* engineCommon_ = nullptr;
-    SpriteCommon* spriteCommon_ = nullptr;
+    std::unique_ptr<SpriteCommon> spriteCommon_;
 
     int32_t kClientWidth_ = 0;
     int32_t kClientHeight_ = 0;
@@ -38,8 +38,8 @@ private:
 
     int frameCount_ = 0;
 
-    Model* model_ = nullptr;
-    Object3D* a_ = nullptr;
+    std::unique_ptr<Model> model_;
+    std::unique_ptr<Object3D> a_;
     std::unique_ptr<Sprite> b_;
     std::unique_ptr<Model> ball_;
 

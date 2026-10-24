@@ -4,25 +4,25 @@
 
 void GamePlayScene::Initialize() {
     engineCommon_ = &EngineCommon::GetInstance();
-    spriteCommon_ = new SpriteCommon();
+    spriteCommon_ = std::make_unique<SpriteCommon>();
 
     kClientWidth_ = WindowManager::kClientWidth;
     kClientHeight_ = WindowManager::kClientHeight;
 
-    //engineCommon_->Initialize(kClientWidth_, kClientHeight_);
+    // NOTE: EngineCommon is already initialized once in Framework::Initialize() — do not call Initialize() again here.
     spriteCommon_->Initialize(engineCommon_);
 
     Transform cameraTransform{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,-5.0f} };
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize(kClientWidth_, kClientHeight_, cameraTransform);
 
-    model_ = new Model();
+    model_ = std::make_unique<Model>();
     model_->Initialize(engineCommon_);
     model_->LoadModel("resources/05_02", "plane.obj");
 
-    a_ = new Object3D();
+    a_ = std::make_unique<Object3D>();
     a_->Initialize(engineCommon_);
-    a_->SetModel(model_);
+    a_->SetModel(model_.get());
 
     b_ = std::make_unique<Sprite>();
     b_->Initialize(engineCommon_);
@@ -39,9 +39,14 @@ void GamePlayScene::Initialize() {
 }
 
 void GamePlayScene::Finalize() {
-    delete a_;
-    delete spriteCommon_;
-    delete model_;
+    // unique_ptr members clean themselves up automatically; explicit reset()
+    // here just makes teardown order explicit/deterministic.
+    a_.reset();
+    model_.reset();
+    b_.reset();
+    ball_.reset();
+    debugCamera_.reset();
+    spriteCommon_.reset();
 }
 
 void GamePlayScene::Update() {
