@@ -87,6 +87,18 @@
     <ClCompile Include="src\engine\particleManager.cpp">
       <Filter>來源檔案\engine</Filter>
     </ClCompile>
+    <ClCompile Include="src\engine\GamePlayScene.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\framework.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\SceneManager.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\TitleScene.cpp">
+      <Filter>來源檔案</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include=".editorconfig" />
@@ -148,6 +160,21 @@
     </ClInclude>
     <ClInclude Include="src\engine\particleManager.h">
       <Filter>標頭檔\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\BaseScene.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\GamePlayScene.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Framework.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\SceneManager.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\TitleScene.h">
+      <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

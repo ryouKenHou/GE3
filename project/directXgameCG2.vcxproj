@@ -165,7 +165,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\framework.cpp" />
+    <ClCompile Include="src\engine\GamePlayScene.cpp" />
     <ClCompile Include="src\engine\particleManager.cpp" />
+    <ClCompile Include="src\engine\SceneManager.cpp" />
+    <ClCompile Include="src\engine\TitleScene.cpp" />
     <ClCompile Include="src\model\ModelManager.cpp" />
     <ClCompile Include="src\sprite\Sprite.cpp" />
     <ClCompile Include="src\engine\Audio.cpp" />
@@ -186,7 +190,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Text Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\BaseScene.h" />
+    <ClInclude Include="src\engine\Framework.h" />
+    <ClInclude Include="src\engine\GamePlayScene.h" />
     <ClInclude Include="src\engine\particleManager.h" />
+    <ClInclude Include="src\engine\SceneManager.h" />
+    <ClInclude Include="src\engine\TitleScene.h" />
     <ClInclude Include="src\model\Object3D.hpp" />
     <ClInclude Include="src\model\ModelManager.h" />
     <ClInclude Include="src\sprite\Sprite.h" />
