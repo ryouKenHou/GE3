@@ -9,6 +9,9 @@
     <Project Path="externals/DirectXTex/DirectXTex_Desktop_2022_Win10.vcxproj" Id="371b9fa9-4c90-4ac6-a123-aced756d6c77" />
     <Project Path="externals/imgui/imgui/imgui.vcxproj" Id="062faf4b-3035-46f2-b84f-64b6ac0c4539" />
   </Folder>
+  <Project Path="../games/AL3_first/AL3_first.vcxproj" Id="ff1ba060-566d-489d-a598-f822ace49bf6">
+    <BuildType Solution="Development|*" Project="Release" />
+  </Project>
   <Project Path="directXgameCG2.vcxproj" Id="071b04b0-af4b-4a20-b28c-30c9430930da">
     <BuildDependency Project="externals/imgui/imgui/imgui.vcxproj" />
   </Project>

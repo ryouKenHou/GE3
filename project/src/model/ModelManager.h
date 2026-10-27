@@ -14,7 +14,7 @@ public:
         return instance;
     }
 
-    // Loads a model from an .obj file (with its .mtl), or returns the cached one if already loaded
+    // Loads models (.obj, .gltf, .glb, .fbx, .dae, etc.)
     const ModelData& Load(const std::string& directoryPath, const std::string& filename);
 
 private:
@@ -22,9 +22,7 @@ private:
     ModelManager(const ModelManager&) = delete;
     ModelManager& operator=(const ModelManager&) = delete;
 
-    MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
-    ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+    ModelData LoadModelWithAssimp(const std::string& fullPath, const std::string& directoryPath);
 
-    // Caches loaded models using "directoryPath/filename" as the key
     std::unordered_map<std::string, ModelData> models_;
 };

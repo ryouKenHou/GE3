@@ -78,16 +78,16 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)externals\assimp\include;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Debug;$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -111,15 +111,15 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)externals\assimp\include;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4049 %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Release;$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -141,9 +141,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine;$(ProjectDir)src\camera;$(ProjectDir)src\model;$(ProjectDir)src\utils;$(ProjectDir)src\math;$(ProjectDir)externals\assimp\include;$(ProjectDir)src\sprite</AdditionalIncludeDirectories>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -152,8 +152,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <AdditionalOptions>/ignore:4049 %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <LinkTimeCodeGeneration />
-      <AdditionalLibraryDirectories>$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Debug;$(SolutionDir)..\generated\output\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>imgui.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>

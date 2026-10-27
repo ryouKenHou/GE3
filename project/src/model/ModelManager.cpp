@@ -1,4 +1,8 @@
 #include "ModelManager.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <iostream>
 
 const ModelData& ModelManager::Load(const std::string& directoryPath, const std::string& filename) {
     std::string key = directoryPath + "/" + filename;
@@ -8,103 +12,85 @@ const ModelData& ModelManager::Load(const std::string& directoryPath, const std:
         return it->second;
     }
 
-    models_[key] = LoadObjFile(directoryPath, filename);
+    models_[key] = LoadModelWithAssimp(key, directoryPath);
     return models_[key];
 }
 
-MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
-    MaterialData materialData;
-    std::string line;
-    std::ifstream file(directoryPath + "/" + filename);
-    assert(file.is_open());
+ModelData ModelManager::LoadModelWithAssimp(const std::string& fullPath, const std::string& directoryPath) {
+    Assimp::Importer importer;
 
-    while (std::getline(file, line)) {
-        std::string identifier;
-        std::istringstream s(line);
-        s >> identifier;
+    // Post-processing flags:
+    // - aiProcess_Triangulate: Converts quads & n-gons into triangles
+    // - aiProcess_FlipUVs: Flips UV texture y-coordinates (1.0 - y)
+    // - aiProcess_GenSmoothNormals: Generates normals if missing
+    // - aiProcess_CalcTangentSpace: Computes tangents/bitangents if needed
+    uint32_t flags = aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_GenSmoothNormals |
+        aiProcess_JoinIdenticalVertices;
 
-        if (identifier == "map_Kd") {
-            std::string textureFilename;
-            s >> textureFilename;
+    const aiScene* scene = importer.ReadFile(fullPath, flags);
 
-            materialData.textureFilePath = directoryPath + "/" + textureFilename;
-        }
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        assert(false && "Failed to load model using Assimp!");
+        return ModelData{};
     }
 
-    return materialData;
-}
-
-ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
     ModelData modelData;
-    std::vector<Vector4> positions;
-    std::vector<Vector3> normals;
-    std::vector<Vector2> texcoords;
-    std::string line;
 
-    std::ifstream file(directoryPath + "/" + filename);
-    assert(file.is_open());
+    // Process all meshes in the scene
+    for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+        aiMesh* mesh = scene->mMeshes[m];
 
-    while (std::getline(file, line)) {
-        std::string identifier;
-        std::istringstream s(line);
-        s >> identifier;
-
-        if (identifier == "v") {
-            Vector4 position;
-            s >> position.x >> position.y >> position.z;
-            position.w = 1.0f;
-            positions.push_back(position);
+        // Process material texture if available
+        if (mesh->mMaterialIndex >= 0) {
+            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            aiString texturePath;
+            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+                modelData.material.textureFilePath = directoryPath + "/" + texturePath.C_Str();
+            }
         }
-        else if (identifier == "vt") {
-            Vector2 texcoord;
-            s >> texcoord.x >> texcoord.y;
 
-            texcoord.y = 1.0f - texcoord.y; // Invert the y-coordinate of the texture coordinate
+        // Iterate through all faces (guaranteed to be triangles by aiProcess_Triangulate)
+        for (unsigned int f = 0; f < mesh->mNumFaces; ++f) {
+            aiFace face = mesh->mFaces[f];
 
-            texcoords.push_back(texcoord);
-        }
-        else if (identifier == "vn") {
-            Vector3 normal;
-            s >> normal.x >> normal.y >> normal.z;
-            normals.push_back(normal);
-        }
-        else if (identifier == "f") {
+            // Extract the 3 vertices for each triangle
             VertexData triangle[3];
+            for (unsigned int i = 0; i < face.mNumIndices; ++i) {
+                uint32_t index = face.mIndices[i];
 
-            for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-                std::string vertexDefinition;
-                s >> vertexDefinition;
+                // Position
+                aiVector3D pos = mesh->mVertices[index];
+                Vector4 position = { pos.x, pos.y, pos.z, 1.0f };
 
-                std::istringstream v(vertexDefinition);
-                uint32_t elementIndices[3];
-                for (int32_t element = 0; element < 3; ++element) {
-                    std::string index;
-                    if (!std::getline(v, index, '/') || index.empty()) {
-                        elementIndices[element] = 0; // 0 means "not present"; adjust downstream usage accordingly
-                        continue;
-                    }
-                    elementIndices[element] = std::stoi(index);
+                // Normal
+                Vector3 normal = { 0.0f, 0.0f, 0.0f };
+                if (mesh->HasNormals()) {
+                    aiVector3D norm = mesh->mNormals[index];
+                    normal = { norm.x, norm.y, norm.z };
                 }
 
-                Vector4 position = positions[elementIndices[0] - 1];
-                Vector2 texcoord = texcoords[elementIndices[1] - 1];
-                Vector3 normal = normals[elementIndices[2] - 1];
+                // UV Coordinates
+                Vector2 texcoord = { 0.0f, 0.0f };
+                if (mesh->HasTextureCoords(0)) {
+                    aiVector3D tex = mesh->mTextureCoords[0][index];
+                    texcoord = { tex.x, tex.y };
+                }
 
+                // Match your coordinate system preferences (DirectX vs OpenGL conversions)
                 position.x *= -1.0f;
                 normal.x *= -1.0f;
 
-                triangle[faceVertex] = { position, texcoord, normal };
+                triangle[i] = { position, texcoord, normal };
             }
 
+            // Maintain your winding order (reversing 0, 1, 2 to 2, 1, 0)
             modelData.vertices.push_back(triangle[2]);
             modelData.vertices.push_back(triangle[1]);
             modelData.vertices.push_back(triangle[0]);
         }
-        else if (identifier == "mtllib") {
-            std::string materialFilename;
-            s >> materialFilename;
-            modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
-        }
     }
+
     return modelData;
 }
