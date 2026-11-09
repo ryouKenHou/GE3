@@ -8,11 +8,12 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-
-public:
 	TransformationMatrix* wvpData = nullptr;
 	Material* materialData = nullptr;
 
+	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+public:
 	void Initialize(EngineCommon* engineCommon) {
 		engineCommon_ = engineCommon;
 
@@ -37,4 +38,19 @@ public:
 			model_->DrawWithTransform(materialResource_->GetGPUVirtualAddress(), wvpResource_->GetGPUVirtualAddress());
 		}
 	}
+
+	Transform& GetTransform() { return transform_; }
+	Transform& GetUVTransform() { return uvTransform_; }
+
+	void SetTransform(const Transform& transform) { transform_ = transform; }
+	void SetUVTransform(const Transform& uvTransform) { uvTransform_ = uvTransform; }
+
+	void UpdateTransforms(Matrix4x4 CameraViewProjectionMatrix) {
+		Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform_.scale, transform_.rotation, transform_.translation);
+		Matrix4x4 wvpMatrix = worldMatrix * CameraViewProjectionMatrix;
+		*wvpData = { wvpMatrix, worldMatrix };
+		materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotation, uvTransform_.translation);
+	}
+
+	Material& GetMaterialData() { return *materialData; }
 };

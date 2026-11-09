@@ -24,8 +24,12 @@ void GamePlayScene::Initialize() {
     a_->Initialize(engineCommon_);
     a_->SetModel(model_.get());
 
+    a2_ = std::make_unique<Object3D>();
+    a2_->Initialize(engineCommon_);
+    a2_->SetModel(model_.get());
+
     b_ = std::make_unique<Sprite>();
-    b_->Initialize(engineCommon_);
+    b_->Initialize(engineCommon_, spriteCommon_.get());
     b_->SetTexture("resources/monsterBall.png");
 
     ball_ = std::make_unique<Model>();
@@ -75,20 +79,17 @@ void GamePlayScene::Update() {
     lastFrameTime_ = currentFrameTime;
 
     // plane
-    Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform_.scale, transform_.rotation, transform_.translation);
-    Matrix4x4 wvpMatrix = worldMatrix * debugCamera_->getViewProjectionMatrix();
-    *a_->wvpData = { wvpMatrix, worldMatrix };
-    a_->materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotation, uvTransform_.translation);
+	a_->UpdateTransforms(debugCamera_->getViewProjectionMatrix());
+
+    // plane2
+	a2_->UpdateTransforms(debugCamera_->getViewProjectionMatrix());
 
     // sprite
     Matrix4x4 orthoProjection = Matrix4x4::MakeOrthographicMatrix(
         0.0f, 0.0f, static_cast<float>(kClientWidth_), static_cast<float>(kClientHeight_), 0.0f, 100.0f
     );
 
-    Matrix4x4 worldMatrixSprite = Matrix4x4::MakeAffineMatrix(transformSprite_.scale, transformSprite_.rotation, transformSprite_.translation);
-    Matrix4x4 wvpMatrixSprite = worldMatrixSprite * orthoProjection;
-    *b_->wvpData = { wvpMatrixSprite, worldMatrixSprite };
-    b_->materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransformSprite_.scale, uvTransformSprite_.rotation, uvTransformSprite_.translation);
+	b_->UpdateTransforms(orthoProjection);
 
     // ball
     Matrix4x4 worldMatrixBall = Matrix4x4::MakeAffineMatrix(transformball_.scale, transformball_.rotation, transformball_.translation);
@@ -108,22 +109,38 @@ void GamePlayScene::Draw() {
     ImGui::Text(" ");
     ImGui::Text("------- plane -----------------");
     ImGui::Checkbox("Show Plane", &showPlane_);
-    ImGui::DragFloat3("plane Transform", &transform_.translation.x, 0.1f);
-    ImGui::DragFloat3("plane Rotation", &transform_.rotation.x, 0.1f);
-    ImGui::DragFloat3("plane Scale", &transform_.scale.x, 0.1f);
-    ImGui::DragFloat2("plane uv transform", &uvTransform_.translation.x, 0.01f);
-    ImGui::DragFloat2("plane uv scale", &uvTransform_.scale.x, 0.01f);
-    ImGui::DragFloat("plane uv rotation", &uvTransform_.rotation.z, 0.01f);
+	Transform& transform = a_->GetTransform();
+    ImGui::DragFloat3("plane Transform", &transform.translation.x, 0.1f);
+    ImGui::DragFloat3("plane Rotation", &transform.rotation.x, 0.1f);
+    ImGui::DragFloat3("plane Scale", &transform.scale.x, 0.1f);
+    Transform& uvTransform = a_->GetUVTransform();
+    ImGui::DragFloat2("plane uv transform", &uvTransform.translation.x, 0.01f);
+    ImGui::DragFloat2("plane uv scale", &uvTransform.scale.x, 0.01f);
+    ImGui::DragFloat("plane uv rotation", &uvTransform.rotation.z, 0.01f);
+
+    ImGui::Text(" ");
+    ImGui::Text("------- plane2 -----------------");
+    ImGui::Checkbox("Show Plane2", &showPlane2_);
+	Transform& transform2 = a2_->GetTransform();
+    ImGui::DragFloat3("plane2 Transform", &transform2.translation.x, 0.1f);
+    ImGui::DragFloat3("plane2 Rotation", &transform2.rotation.x, 0.1f);
+    ImGui::DragFloat3("plane2 Scale", &transform2.scale.x, 0.1f);
+    Transform& uvTransform2 = a2_->GetUVTransform();
+    ImGui::DragFloat2("plane2 uv transform", &uvTransform2.translation.x, 0.01f);
+    ImGui::DragFloat2("plane2 uv scale", &uvTransform2.scale.x, 0.01f);
+    ImGui::DragFloat("plane2 uv rotation", &uvTransform2.rotation.z, 0.01f);
 
     ImGui::Text(" ");
     ImGui::Text("------- sprite -----------------");
     ImGui::Checkbox("Show Sprite", &showSprite_);
-    ImGui::DragFloat3("sprite transform", &transformSprite_.translation.x, 0.1f);
-    ImGui::DragFloat3("sprite rotation", &transformSprite_.rotation.x, 0.1f);
-    ImGui::DragFloat3("sprite scale", &transformSprite_.scale.x, 0.1f);
-    ImGui::DragFloat2("sprite uv transform", &uvTransformSprite_.translation.x, 0.01f);
-    ImGui::DragFloat2("sprite uv scale", &uvTransformSprite_.scale.x, 0.01f);
-    ImGui::DragFloat("sprite uv rotation", &uvTransformSprite_.rotation.z, 0.01f);
+	Transform& spriteTransform = b_->GetTransform();
+    ImGui::DragFloat3("sprite transform", &spriteTransform.translation.x, 0.1f);
+    ImGui::DragFloat3("sprite rotation", &spriteTransform.rotation.x, 0.1f);
+    ImGui::DragFloat3("sprite scale", &spriteTransform.scale.x, 0.1f);
+    Transform& spriteUVTransform = b_->GetUVTransform();
+    ImGui::DragFloat2("sprite uv transform", &spriteUVTransform.translation.x, 0.01f);
+    ImGui::DragFloat2("sprite uv scale", &spriteUVTransform.scale.x, 0.01f);
+    ImGui::DragFloat("sprite uv rotation", &spriteUVTransform.rotation.z, 0.01f);
 
     ImGui::Text(" ");
     ImGui::Text("------- ball -----------------");
@@ -145,7 +162,7 @@ void GamePlayScene::Draw() {
     ImGui::Text(" 1: half lambert");
     ImGui::Text(" 2: lambert");
     ImGui::DragInt("EnableLighting", &ball_->materialData->enableLighting, 0.1f, 0, 2);
-    a_->materialData->enableLighting = ball_->materialData->enableLighting;
+    a_->GetMaterialData().enableLighting = ball_->materialData->enableLighting;
 
     ImGui::Text(" ");
     ImGui::Text("------- audio -----------------");
@@ -155,8 +172,9 @@ void GamePlayScene::Draw() {
 
     ImGui::End();
 #endif
-
+    if (showPlane2_) a2_->Draw();
     if (showPlane_) a_->Draw();    
+    
     if (showBall_) ball_->Draw();
 
     ParticleManager::GetInstance().Update(

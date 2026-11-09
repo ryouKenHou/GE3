@@ -111,7 +111,6 @@ void ParticleManager::Update(float deltaTime, const Matrix4x4& billboardMatrix, 
 
 		float alpha = 1.0f - (p.currentTime / p.lifeTime);
 		p.color.w = startColor_.w * alpha;
-
 		gpuSlots_[i].materialData->color = p.color;
 
 		Matrix4x4 scaleMatrix = Matrix4x4::MakeScaleMatrix({ p.scale, p.scale, p.scale });

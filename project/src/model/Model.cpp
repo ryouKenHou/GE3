@@ -141,7 +141,7 @@ void Model::Draw() {
 
 void Model::DrawInternal(D3D12_GPU_VIRTUAL_ADDRESS materialGPUAddress, D3D12_GPU_VIRTUAL_ADDRESS wvpGPUAddress) {
 	engineCommon_->GetCommandList()->SetGraphicsRootSignature(engineCommon_->GetRootSignature());
-	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Opaque3D));
+	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Transparent3D));
 	if (indexResource) {
 		engineCommon_->GetCommandList()->IASetIndexBuffer(&indexBufferView);
 	}

@@ -56,7 +56,7 @@ void PSOManager::Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRo
         .SetShaders(vertexShaderBlob.Get(), pixelShaderBlob.Get())
         .SetInputLayout(inputElementDescs, _countof(inputElementDescs))
         .EnableAlphaBlending()
-        .DisableDepthWrite()
+        //.DisableDepthWrite()
         .Build(device);
 }
 
