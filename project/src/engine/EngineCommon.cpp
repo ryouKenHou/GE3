@@ -83,7 +83,7 @@ void EngineCommon::Initialize(int32_t Width, int32_t Height) {
 	InitializeDevice();
 
 	// WinApp / Window 初始化
-	windowManager.Initialize(SW_SHOW, clientWidth, clientHeight, L"CG2");
+	windowManager.Initialize(SW_SHOW, clientWidth, clientHeight, L"LE2A_30_リョウ_ケン_ホウ_x反射魔弾x");
 
 	// 2. コマンド関連の初期化
 	InitializeCommand();

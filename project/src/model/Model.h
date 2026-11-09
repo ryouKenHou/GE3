@@ -45,4 +45,20 @@ public:
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetTextureSRVHandle() const { return textureSrvGPUHandle; }
+
+	void SetEnableLighting(bool enable) {
+		if (materialData) {
+			materialData->enableLighting = enable ? 1 : 0;
+		}
+	}
+
+	void SetTexture(const std::string& textureFilePath) {
+		DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+			textureFilePath,
+			engineCommon_->GetDevice(),
+			engineCommon_->GetCommandList(),
+			engineCommon_->GetSRVAllocator()
+		);
+		textureSrvGPUHandle = texHandle.gpuHandle;
+	}
 };

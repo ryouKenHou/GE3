@@ -1,24 +1,42 @@
 #include "WindowManager.h"
 #include <cstdio>
 
+#ifdef _DEBUG
 #include "../../externals/imgui/imgui/imgui.h"
 #include "../../externals/imgui/imgui/imgui_impl_win32.h"
 #include "../../externals/imgui/imgui/imgui_impl_dx12.h"
+#endif
 
 #pragma comment(lib, "winmm.lib")
 
+#ifdef _DEBUG
 // ImGui handler declaration
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
+
+// Holds the single live WindowManager instance so the global WndProc can keep
+// its tracked client size up to date (see WM_SIZE below).
+WindowManager* WindowManager::instance_ = nullptr;
 
 // Definition of the global WndProc
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+#ifdef _DEBUG
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
         return true;
     }
+#endif
 
     switch (msg) {
     case WM_DESTROY:
         PostQuitMessage(0);
+        return 0;
+    case WM_SIZE:
+        // wparam == SIZE_MINIMIZED gives a 0x0 size; ignore that so the tracked
+        // size reflects the last real client-area size instead of 0.
+        if (WindowManager::instance_ != nullptr && wparam != SIZE_MINIMIZED) {
+            WindowManager::instance_->clientWidth_ = static_cast<int32_t>(LOWORD(lparam));
+            WindowManager::instance_->clientHeight_ = static_cast<int32_t>(HIWORD(lparam));
+        }
         return 0;
     }
 
@@ -27,6 +45,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
 // Definition of WindowManager methods
 void WindowManager::Initialize(int nCmdShow, int width, int height, const wchar_t* windowTitle) {
+    instance_ = this;
+
     windowClass_ = {};
     windowClass_.lpfnWndProc = WndProc;
     windowClass_.lpszClassName = L"CG2WindowClass";

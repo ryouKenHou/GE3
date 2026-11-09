@@ -28,4 +28,9 @@ public:
 	void Initialize(EngineCommon* engineCommon);
 	void Draw();
 	void SetTexture(const std::string& textureFilePath);
+
+	// Lets multiple Sprites share one already-loaded texture (e.g. a digit
+	// sprite sheet used by several score-digit sprites) without reloading it.
+	D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureSrvGPUHandle; }
+	void SetTextureHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle) { textureSrvGPUHandle = handle; }
 };

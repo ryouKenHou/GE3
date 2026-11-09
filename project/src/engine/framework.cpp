@@ -1,15 +1,14 @@
 #include "Framework.h"
 #include "EngineCommon.h"
 #include "SceneManager.h"
-#include "TitleScene.h"
 
 Framework::~Framework() = default;
 
 void Framework::Initialize() {
     EngineCommon::GetInstance().Initialize(WindowManager::kClientWidth, WindowManager::kClientHeight);
 
-    // Start with the TitleScene state
-    SceneManager::GetInstance().ChangeScene(std::make_unique<TitleScene>());
+    // Start with whatever scene the concrete game's Framework subclass provides.
+    SceneManager::GetInstance().ChangeScene(CreateInitialScene());
 }
 
 void Framework::Finalize() {

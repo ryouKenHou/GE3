@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="engineFiles">
+      <UniqueIdentifier>{b9f8d1c5-1f75-4fe7-97e1-99c70d0939f2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\Audio.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\camera\DebugCamera.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\DescriptorAllocator.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\EngineCommon.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\framework.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\InputSystem.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\model\Model.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\model\ModelManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\particleManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\PsoManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\SceneManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\sprite\Sprite.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\sprite\SpriteCommon.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\TextureManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)src\engine\WindowManager.cpp">
+      <Filter>engineFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3FirstFramework.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3TitleScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3GamePlayScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AL3TitleScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AL3GamePlayScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="player.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AL3FirstFramework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="block.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TileMap.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Bullet.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

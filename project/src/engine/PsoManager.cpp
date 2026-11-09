@@ -74,7 +74,7 @@ IDxcBlob* PSOManager::CompileShader(
 ) {
     // read file
     Log::LogMessage(ConvertString(std::format(L"Begin CompileShader: path:{}, profile:{}.\n", filePath, profile)));
-    IDxcBlobEncoding* shaderSource = nullptr;
+    Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
     HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
     assert(SUCCEEDED(hr));
 
@@ -93,7 +93,7 @@ IDxcBlob* PSOManager::CompileShader(
         L"-Zpr",
     };
 
-    IDxcResult* shaderResult = nullptr;
+    Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
     hr = dxcCompiler->Compile(
         &shaderSourceBuffer,
         arguments,
@@ -117,8 +117,6 @@ IDxcBlob* PSOManager::CompileShader(
     assert(SUCCEEDED(hr));
 
     Log::LogMessage(ConvertString(std::format(L"Compile Succeeded: path:{}, profile:{}.\n", filePath, profile)));
-    shaderSource->Release();
-    shaderResult->Release();
     return shaderBlob;
 }
 

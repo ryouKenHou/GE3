@@ -156,8 +156,7 @@ void GamePlayScene::Draw() {
     ImGui::End();
 #endif
 
-    if (showPlane_) a_->Draw();
-    if (showSprite_) b_->Draw();
+    if (showPlane_) a_->Draw();    
     if (showBall_) ball_->Draw();
 
     ParticleManager::GetInstance().Update(
@@ -173,5 +172,6 @@ void GamePlayScene::Draw() {
 #endif
 
     spriteCommon_->PreDraw();
+    if (showSprite_) b_->Draw();
     engineCommon_->PostDraw();
 }

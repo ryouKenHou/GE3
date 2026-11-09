@@ -42,6 +42,9 @@ private:
 	struct GPUSlot {
 		Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource;
 		TransformationMatrix* wvpData = nullptr;
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+		Material* materialData = nullptr;
 	};
 
 	EngineCommon* engineCommon_ = nullptr;
@@ -49,8 +52,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-	Material* materialData_ = nullptr;
+	
 
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvGPUHandle_{};
 
@@ -68,14 +70,14 @@ private:
 	Vector3 velocityMax_{ 1.0f, 1.0f, 1.0f };
 	float lifeTimeMin_ = 1.0f;
 	float lifeTimeMax_ = 3.0f;
-	float scaleMin_ = 0.5f;
-	float scaleMax_ = 1.0f;
+	float scaleMin_ = 0.05f;
+	float scaleMax_ = 0.2f;
 	Vector4 startColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 	bool continuousEmit_ = false;
 	float emitRate_ = 10.0f;       // particles per second, used when continuousEmit_ is on
 	float emitAccumulator_ = 0.0f;
-	int emitCountManual_ = 10;     // used by the "Emit Now" button
+	int emitCountManual_ = 20;     // used by the "Emit Now" button
 
 	char textureFilePathBuf_[256] = "resources/05_02/circle.png";
 };

@@ -14,6 +14,7 @@ void SpriteCommon::PreDraw() {
 }
 
 void SpriteCommon::CreateRootSignature() {
+	rootSigiture_ = engineCommon_->GetRootSignature();
 }
 
 void SpriteCommon::CreatePipelineState() {	

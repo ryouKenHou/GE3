@@ -101,8 +101,8 @@ SoundData AudioSystem::SoundLoadMedia(const std::string& filename) {
     CoTaskMemFree(pWaveFormat);
 
     soundData.bufferSize = static_cast<unsigned int>(audioData.size());
-    soundData.pBuffer = new BYTE[soundData.bufferSize];
-    memcpy(soundData.pBuffer, audioData.data(), soundData.bufferSize);
+	soundData.pBuffer = std::make_unique<BYTE[]>(soundData.bufferSize);
+    memcpy(soundData.pBuffer.get(), audioData.data(), soundData.bufferSize);
 
     return soundData;
 }
@@ -123,8 +123,7 @@ void AudioSystem::UnloadAll() {
 }
 
 void AudioSystem::SoundUnload(SoundData* soundData) {
-    delete[] soundData->pBuffer;
-    soundData->pBuffer = 0;
+    soundData->pBuffer.reset();
     soundData->bufferSize = 0;
     soundData->wfex = {};
 }
@@ -139,22 +138,30 @@ bool AudioSystem::LoadAudio(const std::string& soundName, const std::string& fil
     if (data.pBuffer == nullptr) {
         return false;
     }
-    soundRegistry_[soundName] = data;
+    soundRegistry_[soundName] = std::move(data);
     return true;
 }
 
-void AudioSystem::PlayAudio(const std::string& soundName) {
+void AudioSystem::PlayAudio(const std::string& soundName, bool loop, float volume) {
     auto it = soundRegistry_.find(soundName);
     if (it != soundRegistry_.end()) {
-        SoundPlayWave(it->second);
+        SoundPlayWave(it->second, loop, volume);
     }
 }
 
-void AudioSystem::SoundPlayWave(const SoundData& soundData) {
+void AudioSystem::SetMasterVolume(float volume) {
+    if (masterVoice_) {
+        masterVoice_->SetVolume(volume);
+    }
+}
+
+void AudioSystem::SoundPlayWave(const SoundData& soundData, bool loop, float volume) {
     HRESULT result;
     IXAudio2SourceVoice* pSourceVoice = nullptr;
     result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex, 0, XAUDIO2_DEFAULT_FREQ_RATIO, voiceCallback_.get());
     assert(SUCCEEDED(result));
+
+    pSourceVoice->SetVolume(volume);
 
     {
         std::lock_guard<std::mutex> lock(voiceMutex_);
@@ -162,9 +169,10 @@ void AudioSystem::SoundPlayWave(const SoundData& soundData) {
     }
 
     XAUDIO2_BUFFER buf{};
-    buf.pAudioData = soundData.pBuffer;
+    buf.pAudioData = soundData.pBuffer.get();
     buf.AudioBytes = soundData.bufferSize;
     buf.Flags = XAUDIO2_END_OF_STREAM;
+    buf.LoopCount = loop ? XAUDIO2_LOOP_INFINITE : 0;
 
     result = pSourceVoice->SubmitSourceBuffer(&buf);
     result = pSourceVoice->Start();

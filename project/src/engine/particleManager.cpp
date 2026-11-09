@@ -1,5 +1,8 @@
 #include "ParticleManager.h"
+
+#ifdef _DEBUG
 #include "../../externals/imgui/imgui/imgui.h"
+#endif
 
 void ParticleManager::Initialize(EngineCommon* engineCommon, uint32_t maxParticles) {
 	engineCommon_ = engineCommon;
@@ -7,16 +10,18 @@ void ParticleManager::Initialize(EngineCommon* engineCommon, uint32_t maxParticl
 
 	CreateQuadMesh();
 
-	materialResource_ = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
-	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-	*materialData_ = { {1.0f, 1.0f, 1.0f, 1.0f}, 0 };
-	materialData_->uvTransform = Matrix4x4::Identity();
+	
 
 	gpuSlots_.resize(maxParticles_);
 	for (auto& slot : gpuSlots_) {
 		slot.wvpResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(TransformationMatrix));
 		slot.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&slot.wvpData));
 		*slot.wvpData = { Matrix4x4::Identity(), Matrix4x4::Identity() };
+
+		slot.materialResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
+		slot.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&slot.materialData));
+		*slot.materialData = { {1.0f, 1.0f, 1.0f, 1.0f}, 0 };
+		slot.materialData->uvTransform = Matrix4x4::Identity();
 	}
 
 	particles_.reserve(maxParticles_);
@@ -107,6 +112,8 @@ void ParticleManager::Update(float deltaTime, const Matrix4x4& billboardMatrix, 
 		float alpha = 1.0f - (p.currentTime / p.lifeTime);
 		p.color.w = startColor_.w * alpha;
 
+		gpuSlots_[i].materialData->color = p.color;
+
 		Matrix4x4 scaleMatrix = Matrix4x4::MakeScaleMatrix({ p.scale, p.scale, p.scale });
 		Matrix4x4 translateMatrix = Matrix4x4::MakeTranslateMatrix(p.position);
 		Matrix4x4 world = scaleMatrix * billboardMatrix * translateMatrix;
@@ -131,17 +138,19 @@ void ParticleManager::Draw() {
 	cmdList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	cmdList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+	
 	cmdList->SetGraphicsRootDescriptorTable(2, textureSrvGPUHandle_);
 	cmdList->SetGraphicsRootConstantBufferView(3, engineCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
 
 	for (size_t i = 0; i < particles_.size(); ++i) {
 		cmdList->SetGraphicsRootConstantBufferView(1, gpuSlots_[i].wvpResource->GetGPUVirtualAddress());
+		cmdList->SetGraphicsRootConstantBufferView(0, gpuSlots_[i].materialResource->GetGPUVirtualAddress());
 		cmdList->DrawInstanced(6, 1, 0, 0);
 	}
 }
 
 void ParticleManager::DrawImGui() {
+#ifdef _DEBUG
 	ImGui::Begin("Particle Editor");
 
 	ImGui::Text("Alive: %zu / %u", particles_.size(), maxParticles_);
@@ -182,4 +191,5 @@ void ParticleManager::DrawImGui() {
 	}
 
 	ImGui::End();
+#endif
 }

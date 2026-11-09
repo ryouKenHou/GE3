@@ -21,7 +21,7 @@
 
 struct SoundData {
     WAVEFORMATEX wfex;
-    BYTE* pBuffer;
+    std::unique_ptr<BYTE[]> pBuffer;
     unsigned int bufferSize;
 };
 
@@ -36,7 +36,10 @@ public:
     SoundData SoundLoadMedia(const std::string& filename);
 
     bool LoadAudio(const std::string& soundName, const std::string& filePath);
-    void PlayAudio(const std::string& soundName);
+    void PlayAudio(const std::string& soundName, bool loop = false, float volume = 1.0f);
+
+    // Master volume affects all currently playing and future sounds (1.0 = normal, 0.0 = silent).
+    void SetMasterVolume(float volume);
 
     void UnloadSound(const std::string& key);
     void SoundUnload(SoundData* soundData);
@@ -59,7 +62,7 @@ private:
         AudioSystem* owner_;
     };
 
-    void SoundPlayWave(const SoundData& soundData);
+    void SoundPlayWave(const SoundData& soundData, bool loop = false, float volume = 1.0f);
     void DestroyFinishedVoice(IXAudio2SourceVoice* voice);
 
     std::unordered_map<std::string, SoundData> soundRegistry_;

@@ -23,11 +23,14 @@
 #include "EngineHelper.h"
 #include "Audio.h"
 #include "InputSystem.h"
+
+#ifdef _DEBUG
 #include "../../externals/imgui/imgui/imgui.h"
 #include "../../externals/imgui/imgui/imgui_impl_win32.h"
 #include "../../externals/imgui/imgui/imgui_impl_dx12.h"
 #include "../../externals/DirectXTex/DirectXTex.h"
 #include "../../externals/DirectXTex/d3dx12.h"
+#endif
 
 #include "LogSystem.h"
 #include "PsoManager.h"
@@ -106,7 +109,7 @@ public:
 	// ================= Audio Function Declarations =================
 	bool LoadAudio(const std::string& soundName, const std::string& filePath) { return audioSystem_.LoadAudio(soundName, filePath); }
 	void SoundUnload(const std::string& soundName) { audioSystem_.UnloadSound(soundName); }
-	void PlayAudio(const std::string& soundName) { audioSystem_.PlayAudio(soundName); }
+	void PlayAudio(const std::string& soundName, bool loop = false, float volume = 1.0f) { audioSystem_.PlayAudio(soundName, loop, volume); }
 
 	// ================== getters ==================
 	InputSystem& GetInputSystem() { return inputSystem_; }
