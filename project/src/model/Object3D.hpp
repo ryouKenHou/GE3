@@ -13,6 +13,10 @@ private:
 
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+
+	// --- DIRTY FLAGS ---
+	bool isTransformDirty_ = true;
+	bool isUVTransformDirty_ = true;
 public:
 	void Initialize(EngineCommon* engineCommon) {
 		engineCommon_ = engineCommon;
@@ -39,17 +43,52 @@ public:
 		}
 	}
 
-	Transform& GetTransform() { return transform_; }
-	Transform& GetUVTransform() { return uvTransform_; }
+	// --- READ-ONLY GETTERS ---
+	const Transform& GetTransform() const { return transform_; }
+	const Transform& GetUVTransform() const { return uvTransform_; }
 
-	void SetTransform(const Transform& transform) { transform_ = transform; }
-	void SetUVTransform(const Transform& uvTransform) { uvTransform_ = uvTransform; }
+	// --- SETTERS (Automatically trigger the dirty flag) ---
+	void SetTransform(const Transform& transform) {
+		transform_ = transform;
+		isTransformDirty_ = true;
+	}
+
+	void SetPosition(const Vector3& pos) {
+		transform_.translation = pos;
+		isTransformDirty_ = true;
+	}
+
+	void SetRotation(const Vector3& rot) {
+		transform_.rotation = rot;
+		isTransformDirty_ = true;
+	}
+
+	void SetScale(const Vector3& scale) {
+		transform_.scale = scale;
+		isTransformDirty_ = true;
+	}
+
+	void SetUVTransform(const Transform& uvTransform) {
+		uvTransform_ = uvTransform;
+		isUVTransformDirty_ = true;
+	}
 
 	void UpdateTransforms(Matrix4x4 CameraViewProjectionMatrix) {
-		Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform_.scale, transform_.rotation, transform_.translation);
-		Matrix4x4 wvpMatrix = worldMatrix * CameraViewProjectionMatrix;
-		*wvpData = { wvpMatrix, worldMatrix };
-		materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotation, uvTransform_.translation);
+		if (!isTransformDirty_ && !isUVTransformDirty_){
+			return;
+		}
+
+		if (isTransformDirty_) {
+			Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform_.scale, transform_.rotation, transform_.translation);
+			Matrix4x4 wvpMatrix = worldMatrix * CameraViewProjectionMatrix;
+			*wvpData = { wvpMatrix, worldMatrix };
+			isTransformDirty_ = false;
+		}
+		
+		if (isUVTransformDirty_) {
+			materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotation, uvTransform_.translation);
+			isUVTransformDirty_ = false;
+		}
 	}
 
 	Material& GetMaterialData() { return *materialData; }
