@@ -1,53 +1,18 @@
 #pragma once
 
-#include <cstdint>
-
-#include <format>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <wrl.h>
-
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
-#include <dbghelp.h>
-#include <strsafe.h>
-#include <dxgidebug.h>
-#include <dxcapi.h>
-
-#include "ConvertString.hpp"
-#include "Matrix4x4.hpp"
-#include "DebugCamera.h"
 #include "WindowManager.h"
-#include "EngineHelper.h"
 #include "Audio.h"
 #include "InputSystem.h"
+#include "SpriteCommon.h"
+#include "particleManager.h"
+#include "Renderer.h"
 
-#ifdef _DEBUG
-#include "../../externals/imgui/imgui/imgui.h"
-#include "../../externals/imgui/imgui/imgui_impl_win32.h"
-#include "../../externals/imgui/imgui/imgui_impl_dx12.h"
-#include "../../externals/DirectXTex/DirectXTex.h"
-#include "../../externals/DirectXTex/d3dx12.h"
-#endif
 
-#include "LogSystem.h"
-#include "PsoManager.h"
-#include "DescriptorAllocator.h"
-#include "TextureManager.h"
-
-#include <chrono>
-#include <thread>
 
 class EngineCommon {
 public:
-	static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
-
-	static EngineCommon& GetInstance() {
-		static EngineCommon instance;
-		return instance;
-	}
+	EngineCommon() = default;
+	~EngineCommon() = default;
 
 	// ========================= Structs ========================
 	struct D3DresourceLeakChecker {
@@ -61,50 +26,12 @@ public:
 		}
 	};
 
-	// ================= Global Variable Declarations =================
-	//extern std::ofstream logStream;
-
-
 	// ================= Function Declarations =================
-	void CreateDefaultPSO();
+	void Initialize(int32_t Width, int32_t Height, const wchar_t* title);
 
-	void Initialize(int32_t Width, int32_t Height);
-	void InitializeFixFPS();
-	void UpdateFixFPS();
-
-
-	void PreDraw();
-	void PostDraw();
+	void PreDraw() {renderer_.PreDraw();}
+	void PostDraw() {renderer_.PostDraw();}
 	void Finalize();
-
-	void InitializeDevice();
-	void InitializeCommand();
-	void CreateSwapChain();
-	void CreateDescriptorHeaps();
-	void CreateDepthBuffer();
-	void InitializeRenderTargetViews();
-	void InitializeDepthStencilView();
-	void InitializeFence();
-	void InitializeViewport();
-	void InitializeScissorRect();
-	void InitializeLight();
-#ifdef _DEBUG
-	void InitializeImGui();
-#endif
-
-	IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, IDxcUtils* dxcUtils, IDxcCompiler3* dxcCompiler, IDxcIncludeHandler* includeHandler);
-
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, UINT numDescriptors, bool shaderVisible);
-
-	DescriptorHandle LoadTexture(const std::string& filePath);
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
-
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
-
-	//void TempMainFunction();
 
 	// ================= Audio Function Declarations =================
 	bool LoadAudio(const std::string& soundName, const std::string& filePath) { return audioSystem_.LoadAudio(soundName, filePath); }
@@ -114,95 +41,30 @@ public:
 	// ================== getters ==================
 	InputSystem& GetInputSystem() { return inputSystem_; }
 	AudioSystem& GetAudioSystem() { return audioSystem_; }
+	SpriteCommon& GetSpriteCommon() { return spriteCommon_; }
+	TextureManager& GetTextureManager() { return GetRenderer().GetTextureManager(); }
+	ParticleManager& GetParticleManager() { return particleManager_; }
+	Renderer& GetRenderer() { return renderer_; }
 
-	ID3D12Device* GetDevice() { return device.Get(); }
-	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
-	DescriptorAllocator& GetSRVAllocator() { return srvAllocator_; }
-	uint32_t GetDescriptorSizeSRV() { return descriptorSizeSRV; }
-	ID3D12RootSignature* GetRootSignature() { return rootSignature.Get(); }
-	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource.Get(); }
-	PSOManager& GetPSOManager() { return psoManager_; }
+	ID3D12Device* GetDevice() { return  GetRenderer().GetDevice(); }
+	ID3D12GraphicsCommandList* GetCommandList() { return GetRenderer().GetCommandList(); }
+	DescriptorAllocator& GetSRVAllocator() { return GetRenderer().GetSRVAllocator(); }
+	uint32_t GetDescriptorSizeSRV() { return GetRenderer().GetDescriptorSizeSRV(); }
+	ID3D12RootSignature* GetRootSignature() { return GetRenderer().GetRootSignature(); }
+	ID3D12Resource* GetDirectionalLightResource() { return GetRenderer().GetDirectionalLightResource(); }
+	PSOManager& GetPSOManager() { return GetRenderer().GetPSOManager(); }
 	WindowManager& GetWindowManager() { return windowManager; }
-	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
+	DirectionalLight* GetDirectionalLightData() { return GetRenderer().GetDirectionalLightData(); }
 
 private:
-	std::chrono::steady_clock::time_point reference_;
-
-	DirectionalLight* directionalLightData;
+	D3DresourceLeakChecker leakChecker;
 
 	InputSystem inputSystem_;
 	AudioSystem audioSystem_;
-
-	D3DresourceLeakChecker leakChecker;
-	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
-	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter;
-	Microsoft::WRL::ComPtr<ID3D12Device> device;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
+	SpriteCommon spriteCommon_;
 	WindowManager windowManager;
-
-	TextureManager textureManager_;
-
-	// 1. RTV Allocator (Non-Shader Visible, ~32 slots for swapchain & render targets)
-	DescriptorAllocator rtvAllocator_;
-
-	// 2. DSV Allocator (Non-Shader Visible, ~16 slots for depth buffers & shadow maps)
-	DescriptorAllocator dsvAllocator_;
-
-	// 3. SRV/CBV/UAV Allocator (Shader Visible, ~2048+ slots for textures, materials, etc.)
-	DescriptorAllocator srvAllocator_;
-
-	PSOManager psoManager_;
-
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-
-	uint32_t descriptorSizeSRV;
-	uint32_t descriptorSizeRTV;
-	uint32_t descriptorSizeDSV;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
-	Microsoft::WRL::ComPtr<ID3D12Resource> swapChainTargets[2];
-
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-	uint64_t fenceValue;
-	HANDLE fenceEvent;
-
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource;
-
-	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
-	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
-
-	D3D12_VIEWPORT viewport;
-	D3D12_RECT scissorRect;
-
-	uint32_t clientWidth;
-	uint32_t clientHeight;
-
-	D3D12_RESOURCE_BARRIER barrier;
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource;
-
+	Renderer renderer_;
+	ParticleManager particleManager_;
+	
 };
 
-class Input {
-public:
-	static bool IsKeyTriggered(int key) {
-		return EngineCommon::GetInstance().GetInputSystem().IsKeyTriggered(key);
-	}
-
-	static bool IsKeyHeld(int key) {
-		return EngineCommon::GetInstance().GetInputSystem().IsKeyHeld(key);
-	}
-
-	static bool IsKeyReleased(int key) {
-		return EngineCommon::GetInstance().GetInputSystem().IsKeyReleased(key);
-	}
-
-	static void Update() {
-		EngineCommon::GetInstance().GetInputSystem().Update();
-	}
-};

@@ -1,22 +1,28 @@
 #pragma once
-#include "BaseScene.h"
 #include <memory>
+
+class BaseScene;
+class EngineCommon;
 
 class SceneManager {
 public:
-    static SceneManager& GetInstance() {
-        static SceneManager instance;
-        return instance;
-    }
+    //static SceneManager& GetInstance() {
+    //    static SceneManager instance;
+    //    return instance;
+    //}
+    SceneManager() = default;
+    ~SceneManager() = default;
 
     void ChangeScene(std::unique_ptr<BaseScene> nextScene);
     void Update();
     void Draw();
     void Finalize();
 
+    void SetEngineCommon(EngineCommon* engineCommon) { engineCommon_ = engineCommon; }
+
 private:
-    SceneManager() = default;
-    ~SceneManager() = default;
+    EngineCommon* engineCommon_ = nullptr;
+    
     SceneManager(const SceneManager&) = delete;
     SceneManager& operator=(const SceneManager&) = delete;
 

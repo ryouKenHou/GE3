@@ -1,4 +1,5 @@
 #include "SpriteCommon.h"
+#include "EngineCommon.h"
 
 SpriteCommon::SpriteCommon() : rootSigiture_(nullptr), pso_(nullptr), engineCommon_(nullptr) {}
 

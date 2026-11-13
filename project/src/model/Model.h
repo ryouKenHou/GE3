@@ -23,6 +23,8 @@ private:
 
 	uint32_t indexCount = 0;
 
+	PSOType psoType_ = PSOType::Transparent3D;
+
 	// Shared draw path: binds the mesh (vertex/index buffer + texture) and issues the draw call,
 	// using caller-supplied CBV addresses for material/WVP so each instance can have its own transform.
 	void DrawInternal(D3D12_GPU_VIRTUAL_ADDRESS materialGPUAddress, D3D12_GPU_VIRTUAL_ADDRESS wvpGPUAddress);
@@ -53,7 +55,7 @@ public:
 	}
 
 	void SetTexture(const std::string& textureFilePath) {
-		DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+		DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 			textureFilePath,
 			engineCommon_->GetDevice(),
 			engineCommon_->GetCommandList(),

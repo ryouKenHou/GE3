@@ -17,6 +17,10 @@ public:
     // Loads models (.obj, .gltf, .glb, .fbx, .dae, etc.)
     const ModelData& Load(const std::string& directoryPath, const std::string& filename);
 
+	void Clear() {
+		models_.clear();
+	}
+
 private:
     ModelManager() = default;
     ModelManager(const ModelManager&) = delete;

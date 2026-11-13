@@ -1,4 +1,5 @@
 #include "ParticleManager.h"
+#include "EngineCommon.h"
 
 #ifdef _DEBUG
 #include "../../externals/imgui/imgui/imgui.h"
@@ -10,19 +11,25 @@ void ParticleManager::Initialize(EngineCommon* engineCommon, uint32_t maxParticl
 
 	CreateQuadMesh();
 
-	
-
-	gpuSlots_.resize(maxParticles_);
-	for (auto& slot : gpuSlots_) {
-		slot.wvpResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(TransformationMatrix));
-		slot.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&slot.wvpData));
-		*slot.wvpData = { Matrix4x4::Identity(), Matrix4x4::Identity() };
-
-		slot.materialResource = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
-		slot.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&slot.materialData));
-		*slot.materialData = { {1.0f, 1.0f, 1.0f, 1.0f}, 0 };
-		slot.materialData->uvTransform = Matrix4x4::Identity();
+	// One structured buffer holding TransformationMatrix for every possible particle slot.
+	instancingTransformResource_ = CreateBufferResource(engineCommon_->GetDevice(), sizeof(TransformationMatrix) * maxParticles_);
+	instancingTransformResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingTransformData_));
+	for (uint32_t i = 0; i < maxParticles_; ++i) {
+		instancingTransformData_[i] = { Matrix4x4::Identity(), Matrix4x4::Identity() };
 	}
+
+	// One structured buffer holding per-instance color for every possible particle slot.
+	instancingColorResource_ = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Vector4) * maxParticles_);
+	instancingColorResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingColorData_));
+	for (uint32_t i = 0; i < maxParticles_; ++i) {
+		instancingColorData_[i] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	}
+
+	// Shared material CBV (uvTransform / lighting toggle / base tint), same for all particles.
+	materialResource_ = CreateBufferResource(engineCommon_->GetDevice(), sizeof(Material));
+	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+	*materialData_ = { {1.0f, 1.0f, 1.0f, 1.0f}, 0 };
+	materialData_->uvTransform = Matrix4x4::Identity();
 
 	particles_.reserve(maxParticles_);
 }
@@ -51,7 +58,7 @@ void ParticleManager::CreateQuadMesh() {
 }
 
 void ParticleManager::SetTexture(const std::string& textureFilePath) {
-	DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+	DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 		textureFilePath,
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),
@@ -105,21 +112,23 @@ void ParticleManager::Update(float deltaTime, const Matrix4x4& billboardMatrix, 
 			continue;
 		}
 
+		ApplyFields(p, deltaTime);
+
 		p.position.x += p.velocity.x * deltaTime;
 		p.position.y += p.velocity.y * deltaTime;
 		p.position.z += p.velocity.z * deltaTime;
 
 		float alpha = 1.0f - (p.currentTime / p.lifeTime);
 		p.color.w = startColor_.w * alpha;
-		gpuSlots_[i].materialData->color = p.color;
+		instancingColorData_[i] = p.color;
 
 		Matrix4x4 scaleMatrix = Matrix4x4::MakeScaleMatrix({ p.scale, p.scale, p.scale });
 		Matrix4x4 translateMatrix = Matrix4x4::MakeTranslateMatrix(p.position);
-		Matrix4x4 world = scaleMatrix * billboardMatrix * translateMatrix;
+		Matrix4x4 world = scaleMatrix * (useBillboardMatrix_ ? billboardMatrix : Matrix4x4::Identity()) * translateMatrix;
 		Matrix4x4 wvp = world * viewProjection;
 
-		gpuSlots_[i].wvpData->World = world;
-		gpuSlots_[i].wvpData->WVP = wvp;
+		instancingTransformData_[i].World = world;
+		instancingTransformData_[i].WVP = wvp;
 
 		++i;
 	}
@@ -131,48 +140,28 @@ void ParticleManager::Draw() {
 	}
 
 	auto* cmdList = engineCommon_->GetCommandList();
-	cmdList->SetGraphicsRootSignature(engineCommon_->GetRootSignature());
-	cmdList->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Transparent3D));
+	cmdList->SetGraphicsRootSignature(engineCommon_->GetPSOManager().GetRootSignature(rootSignatureType::Particle));
+	cmdList->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Particle));
 
 	cmdList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	
-	cmdList->SetGraphicsRootDescriptorTable(2, textureSrvGPUHandle_);
-	cmdList->SetGraphicsRootConstantBufferView(3, engineCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
+	cmdList->SetGraphicsRootShaderResourceView(0, instancingTransformResource_->GetGPUVirtualAddress());
+	cmdList->SetGraphicsRootShaderResourceView(1, instancingColorResource_->GetGPUVirtualAddress());
+	cmdList->SetGraphicsRootConstantBufferView(2, materialResource_->GetGPUVirtualAddress());
+	cmdList->SetGraphicsRootDescriptorTable(3, textureSrvGPUHandle_);
+	cmdList->SetGraphicsRootConstantBufferView(4, engineCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
 
-	for (size_t i = 0; i < particles_.size(); ++i) {
-		cmdList->SetGraphicsRootConstantBufferView(1, gpuSlots_[i].wvpResource->GetGPUVirtualAddress());
-		cmdList->SetGraphicsRootConstantBufferView(0, gpuSlots_[i].materialResource->GetGPUVirtualAddress());
-		cmdList->DrawInstanced(6, 1, 0, 0);
-	}
+	cmdList->DrawInstanced(6, static_cast<UINT>(particles_.size()), 0, 0);
+
 }
 
 void ParticleManager::DrawImGui() {
 #ifdef _DEBUG
-	ImGui::Begin("Particle Editor");
-
-	ImGui::Text("Alive: %zu / %u", particles_.size(), maxParticles_);
-	ImGui::Separator();
-
-	ImGui::DragFloat3("Spawn Position", &spawnPosition_.x, 0.1f);
-
-	ImGui::Text("Velocity Range");
-	ImGui::DragFloat3("Velocity Min", &velocityMin_.x, 0.05f);
-	ImGui::DragFloat3("Velocity Max", &velocityMax_.x, 0.05f);
-
-	ImGui::DragFloat("Life Time Min", &lifeTimeMin_, 0.05f, 0.01f, 60.0f);
-	ImGui::DragFloat("Life Time Max", &lifeTimeMax_, 0.05f, lifeTimeMin_, 60.0f);
-
-	ImGui::DragFloat("Scale Min", &scaleMin_, 0.01f, 0.01f, 10.0f);
-	ImGui::DragFloat("Scale Max", &scaleMax_, 0.01f, scaleMin_, 10.0f);
-
-	ImGui::ColorEdit4("Start Color", &startColor_.x);
-
+	ImGui::Begin("Particle Editor");	
 	ImGui::Separator();
 	ImGui::Checkbox("Continuous Emit", &continuousEmit_);
 	ImGui::DragFloat("Emit Rate (per sec)", &emitRate_, 0.5f, 0.0f, 1000.0f);
-
 	ImGui::Separator();
 	ImGui::SliderInt("Manual Emit Count", &emitCountManual_, 1, 100);
 	if (ImGui::Button("Emit Now")) {
@@ -184,11 +173,138 @@ void ParticleManager::DrawImGui() {
 	}
 
 	ImGui::Separator();
-	ImGui::InputText("Texture Path", textureFilePathBuf_, sizeof(textureFilePathBuf_));
-	if (ImGui::Button("Load Texture")) {
-		SetTexture(textureFilePathBuf_);
+	if (ImGui::CollapsingHeader("Particles")) {
+		ImGui::Text("Alive: %zu / %u", particles_.size(), maxParticles_);
+		ImGui::Separator();
+
+		ImGui::DragFloat3("Spawn Position", &spawnPosition_.x, 0.1f);
+
+		ImGui::Text("Velocity Range");
+		ImGui::DragFloat3("Velocity Min", &velocityMin_.x, 0.05f);
+		ImGui::DragFloat3("Velocity Max", &velocityMax_.x, 0.05f);
+		if (velocityMin_.x > velocityMax_.x) velocityMax_.x = velocityMin_.x;
+		if (velocityMin_.y > velocityMax_.y) velocityMax_.y = velocityMin_.y;
+		if (velocityMin_.z > velocityMax_.z) velocityMax_.z = velocityMin_.z;
+
+		ImGui::DragFloat("Life Time Min", &lifeTimeMin_, 0.05f, 0.01f, 60.0f);
+		ImGui::DragFloat("Life Time Max", &lifeTimeMax_, 0.05f, lifeTimeMin_, 60.0f);
+		if (lifeTimeMin_ > lifeTimeMax_) lifeTimeMax_ = lifeTimeMin_;
+
+		ImGui::DragFloat("Scale Min", &scaleMin_, 0.01f, 0.01f, 10.0f);
+		ImGui::DragFloat("Scale Max", &scaleMax_, 0.01f, scaleMin_, 10.0f);
+		if (scaleMin_ > scaleMax_) scaleMax_ = scaleMin_;
+
+		ImGui::ColorEdit4("Start Color", &startColor_.x);
+
+	}
+
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Texture")) {
+		ImGui::InputText("Texture Path", textureFilePathBuf_, sizeof(textureFilePathBuf_));
+		if (ImGui::Button("Load Texture")) {
+			SetTexture(textureFilePathBuf_);
+		}
+		ImGui::Checkbox("Use BillBoard", &useBillboardMatrix_);
+	}
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Fields")) {
+		if (ImGui::Button("Add Gravity Field")) {
+			ParticleField f{};
+			f.type = FieldType::Gravity;
+			f.direction = { 0.0f, -1.0f, 0.0f };
+			f.strength = 9.8f;
+			f.area = { {-5.0f, -5.0f, -5.0f}, {5.0f, 5.0f, 5.0f} };
+			AddField(f);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Add Acceleration Field")) {
+			ParticleField f{};
+			f.type = FieldType::Acceleration;
+			f.direction = { 1.0f, 0.0f, 0.0f };
+			f.strength = 2.0f;
+			f.area = { {-5.0f, -5.0f, -5.0f}, {5.0f, 5.0f, 5.0f} };
+			AddField(f);
+		}
+
+		for (size_t i = 0; i < fields_.size(); ++i) {
+			ParticleField& f = fields_[i];
+			ImGui::PushID(static_cast<int>(i));
+
+			const char* typeLabel = (f.type == FieldType::Gravity) ? "Gravity" : "Acceleration";
+			if (ImGui::TreeNode(typeLabel)) {
+				ImGui::Checkbox("Enabled", &f.enabled);
+
+				int typeIdx = static_cast<int>(f.type);
+				const char* items[] = { "Gravity", "Acceleration" };
+				if (ImGui::Combo("Type", &typeIdx, items, IM_ARRAYSIZE(items))) {
+					f.type = static_cast<FieldType>(typeIdx);
+				}
+
+				ImGui::DragFloat3("Direction", &f.direction.x, 0.05f);
+				ImGui::DragFloat("Strength", &f.strength, 0.1f);
+
+				ImGui::DragFloat3("Area Min", &f.area.min.x, 0.1f);
+				ImGui::DragFloat3("Area Max", &f.area.max.x, 0.1f);
+
+				if (ImGui::Button("Remove Field")) {
+					ImGui::TreePop();
+					ImGui::PopID();
+					RemoveField(i);
+					break; // iterator invalidated
+				}
+
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
 	}
 
 	ImGui::End();
 #endif
+}
+
+void ParticleManager::ApplyFields(ParticleData& p, float deltaTime) {
+	for (const auto& field : fields_) {
+		if (!field.enabled) {
+			continue;
+		}
+		if (!field.area.Contains(p.position)) {
+			continue;
+		}
+
+		switch (field.type) {
+		case FieldType::Gravity:
+			// Constant force toward `direction`, independent of current velocity.
+			p.velocity = p.velocity + field.direction.Normalized() * (field.strength * deltaTime);
+			break;
+
+		case FieldType::Acceleration:
+			// Same math as Gravity here, but conceptually represents a general
+			// directional acceleration field (e.g. wind) rather than gravity.
+			p.velocity = p.velocity + field.direction.Normalized() * (field.strength * deltaTime);
+			break;
+		}
+	}
+}
+
+size_t ParticleManager::AddField(const ParticleField& field) {
+	fields_.push_back(field);
+	return fields_.size() - 1;
+}
+
+void ParticleManager::RemoveField(size_t index) {
+	if (index < fields_.size()) {
+		fields_.erase(fields_.begin() + index);
+	}
+}
+
+void ParticleManager::ClearFields() {
+	fields_.clear();
+}
+
+ParticleField* ParticleManager::GetField(size_t index) {
+	if (index < fields_.size()) {
+		return &fields_[index];
+	}
+	return nullptr;
 }

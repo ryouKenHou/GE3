@@ -3,23 +3,24 @@
 #include "GamePlayScene.h"
 #include <memory>
 
-void TitleScene::Initialize() {
-    // Initialize title resources if needed
+void TitleScene::Initialize(EngineCommon* engineCommon, SceneManager* sceneManager) {
+	engineCommon_ = engineCommon;
+	sceneManager_ = sceneManager;
 }
 
 void TitleScene::Finalize() {
-    // Clean up title resources
+	// Clean up title resources
 }
 
 void TitleScene::Update() {
-    Input::Update();
+	engineCommon_->GetInputSystem().Update();
 
-    // Press Space or Enter to transition to the Gameplay Scene state
-    if (Input::IsKeyTriggered(DIK_SPACE) || Input::IsKeyTriggered(DIK_RETURN)) {
-        SceneManager::GetInstance().ChangeScene(std::make_unique<GamePlayScene>());
-    }
+	// Press Space or Enter to transition to the Gameplay Scene state
+	if (engineCommon_->GetInputSystem().IsKeyTriggered(DIK_SPACE) || engineCommon_->GetInputSystem().IsKeyTriggered(DIK_RETURN)) {
+		sceneManager_->ChangeScene(std::make_unique<GamePlayScene>());
+	}
 }
 
 void TitleScene::Draw() {
-    // Render title screen graphics / UI here
+	// Render title screen graphics / UI here
 }

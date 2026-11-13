@@ -2,9 +2,10 @@
 #include "SceneManager.h"
 #include "TitleScene.h"
 
-void GamePlayScene::Initialize() {
-    engineCommon_ = &EngineCommon::GetInstance();
-    spriteCommon_ = std::make_unique<SpriteCommon>();
+void GamePlayScene::Initialize(EngineCommon* engineCommon, SceneManager* sceneManager) {
+    engineCommon_ = engineCommon;
+    sceneManager_ = sceneManager;
+    spriteCommon_ = &engineCommon_->GetSpriteCommon();
 
     kClientWidth_ = WindowManager::kClientWidth;
     kClientHeight_ = WindowManager::kClientHeight;
@@ -29,15 +30,14 @@ void GamePlayScene::Initialize() {
     a2_->SetModel(model_.get());
 
     b_ = std::make_unique<Sprite>();
-    b_->Initialize(engineCommon_, spriteCommon_.get());
+    b_->Initialize(engineCommon_, spriteCommon_);
     b_->SetTexture("resources/monsterBall.png");
 
     ball_ = std::make_unique<Model>();
     ball_->Initialize(engineCommon_);
     ball_->UsingTemplateModel(1);
 
-    ParticleManager::GetInstance().Initialize(engineCommon_);
-    ParticleManager::GetInstance().SetTexture("resources/circle.png");
+    engineCommon_->GetParticleManager().SetTexture("resources/circle.png");
 
     lastFrameTime_ = std::chrono::steady_clock::now();
 }
@@ -50,27 +50,28 @@ void GamePlayScene::Finalize() {
     b_.reset();
     ball_.reset();
     debugCamera_.reset();
-    spriteCommon_.reset();
+    spriteCommon_ = nullptr;
 }
 
 void GamePlayScene::Update() {
-    Input::Update();
+    engineCommon_->GetInputSystem().Update();
 
-    BYTE* keyboardState = EngineCommon::GetInstance().GetInputSystem().getKeyboardState();
+    BYTE* keyboardState = engineCommon_->GetInputSystem().getKeyboardState();
 
     if (keyboardState[DIK_CAPSLOCK]) {
         OutputDebugStringA("Hit 0.\n");
     }
 
-    if (Input::IsKeyTriggered(DIK_CAPSLOCK)) {
+    if (engineCommon_->GetInputSystem().IsKeyTriggered(DIK_CAPSLOCK)) {
         OutputDebugStringA("Hit 1.\n");
     }
 
-    if (Input::IsKeyHeld(DIK_CAPSLOCK)) {
+    if (engineCommon_->GetInputSystem().IsKeyHeld(DIK_CAPSLOCK)) {
         OutputDebugStringA("Hit 2.\n");
     }
 
-    debugCamera_->Update(EngineCommon::GetInstance().GetInputSystem().getKeyboardState());
+    debugCamera_->Update(engineCommon_->GetInputSystem().getKeyboardState());
+    debugCamera_->SetIsControlEnable(true);
 
     frameCount_++;
 
@@ -133,6 +134,9 @@ void GamePlayScene::Draw() {
     ImGui::DragFloat2("plane2 uv scale", &uvTransform2.scale.x, 0.01f);
     ImGui::DragFloat("plane2 uv rotation", &uvTransform2.rotation.z, 0.01f);
 	a2_->SetUVTransform(uvTransform2);
+	Material materialData2 = a2_->GetMaterialData();
+	ImGui::DragFloat4("plane2 material color", &materialData2.color.x, 0.01f);
+	a2_->SetMaterialData(materialData2);
 
     ImGui::Text(" ");
     ImGui::Text("------- sprite -----------------");
@@ -168,7 +172,7 @@ void GamePlayScene::Draw() {
     ImGui::Text(" 1: half lambert");
     ImGui::Text(" 2: lambert");
     ImGui::DragInt("EnableLighting", &ball_->materialData->enableLighting, 0.1f, 0, 2);
-    a_->GetMaterialData().enableLighting = ball_->materialData->enableLighting;
+    a_->SetEnableLighting(ball_->materialData->enableLighting);
 
     ImGui::Text(" ");
     ImGui::Text("------- audio -----------------");
@@ -178,20 +182,20 @@ void GamePlayScene::Draw() {
 
     ImGui::End();
 #endif
-    if (showPlane2_) a2_->Draw();
-    if (showPlane_) a_->Draw();    
-    
-    if (showBall_) ball_->Draw();
 
-    ParticleManager::GetInstance().Update(
+    if (showBall_) ball_->Draw();
+    if (showPlane_) a_->Draw();
+    if (showPlane2_) a2_->Draw();     
+
+    engineCommon_->GetParticleManager().Update(
         deltaTime_,
         debugCamera_->GetBillboardMatrix(),
         debugCamera_->getViewProjectionMatrix()
     );
-    ParticleManager::GetInstance().Draw();
+    engineCommon_->GetParticleManager().Draw();
 
 #ifdef _DEBUG
-    ParticleManager::GetInstance().DrawImGui();
+    engineCommon_->GetParticleManager().DrawImGui();
     ImGui::Render();
 #endif
 

@@ -52,6 +52,11 @@ public:
         return *this;
     }
 
+    PSOBuilder& SetInputLayout(const D3D12_INPUT_LAYOUT_DESC& inputLayout) {
+        desc_.InputLayout = inputLayout;
+        return *this;
+    }
+
     // Preset Helper: Enable Alpha Blending (for UI / Sprites / Transparency)
     PSOBuilder& EnableAlphaBlending() {
         D3D12_RENDER_TARGET_BLEND_DESC& rt = desc_.BlendState.RenderTarget[0];
@@ -94,7 +99,15 @@ enum class PSOType {
     Transparent3D,
     Wireframe,
     Sprite2D,
-    UI
+    UI,
+    Particle
+};
+
+enum class rootSignatureType {
+	Default,
+	Sprite,
+	UI,
+    Particle
 };
 
 class PSOManager {
@@ -102,31 +115,34 @@ public:
     PSOManager() = default;
     ~PSOManager() = default;
 
-    void Initialize(ID3D12Device* device, ID3D12RootSignature* defaultRootSignature);
+    void Initialize(ID3D12Device* device);
 
     // Fetch a PSO for drawing
     ID3D12PipelineState* GetPSO(PSOType type) const;
     ID3D12PipelineState* GetPSO(const std::string& customName) const;
-	IDxcBlob* GetVertexShaderBlob() const { return vertexShaderBlob.Get(); }
-	IDxcBlob* GetPixelShaderBlob() const { return pixelShaderBlob.Get(); }
+
+    ID3D12RootSignature* GetRootSignature(rootSignatureType type) const;
 
     ID3D12PipelineState* CreatePSO(const std::string& name, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
         bool enableAlphaBlending , bool disableDepthWrite);
     ID3D12PipelineState* CreatePSO(PSOType type, ID3D12Device* device, ID3D12RootSignature* rootSig, IDxcBlob* vsBlob, IDxcBlob* psBlob, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT inputLayoutCount,
         bool enableAlphaBlending , bool disableDepthWrite);
+
+    IDxcBlob* LoadOrGetShader(const std::wstring& filePath, const wchar_t* profile, IDxcUtils* utils, IDxcCompiler3* compiler, IDxcIncludeHandler* handler);
+
 private:
     std::unordered_map<PSOType, Microsoft::WRL::ComPtr<ID3D12PipelineState>> enumPipelines_;
+	std::unordered_map<rootSignatureType, Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatures_;
     std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> customPipelines_;
 
-    IDxcBlob* CompileShader(
-        const std::wstring& filePath,
-        const wchar_t* profile,
-        IDxcUtils* dxcUtils,
-        IDxcCompiler3* dxcCompiler,
-        IDxcIncludeHandler* includeHandler
-    );
+    IDxcBlob* CompileShader(const std::wstring& filePath, const wchar_t* profile, IDxcUtils* dxcUtils, IDxcCompiler3* dxcCompiler,IDxcIncludeHandler* includeHandler);
 
+	void CreateRootSignatures(ID3D12Device* device);
+    void CreateParticleRootSignature(ID3D12Device* device);
+    D3D12_INPUT_LAYOUT_DESC CreateDefaultInputLayout();
 
-    Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob;
-    Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob;
+    std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> shaderBlobs_;
+
+    Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
 };

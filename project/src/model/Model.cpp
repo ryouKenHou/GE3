@@ -32,7 +32,7 @@ void Model::LoadModel(const std::string& directoryPath, const std::string& filen
 	*wvpData = { Matrix4x4::Identity(), Matrix4x4::Identity() };
 
 	//load sencond texture for sprite
-	DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+	DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 		modelData.material.textureFilePath,
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),
@@ -124,12 +124,14 @@ void Model::UsingTemplateModel(int type) {
 		break;
 	}
 	//load sencond texture for sprite
-	DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+	DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 		"resources/05_02/uvChecker.png",
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),
 		engineCommon_->GetSRVAllocator() // You will need to add this getter to EngineCommon
 	);
+
+	psoType_ = PSOType::Opaque3D;
 
 	// Store ONLY the GPU handle needed for drawing
 	textureSrvGPUHandle = texHandle.gpuHandle;
@@ -141,7 +143,7 @@ void Model::Draw() {
 
 void Model::DrawInternal(D3D12_GPU_VIRTUAL_ADDRESS materialGPUAddress, D3D12_GPU_VIRTUAL_ADDRESS wvpGPUAddress) {
 	engineCommon_->GetCommandList()->SetGraphicsRootSignature(engineCommon_->GetRootSignature());
-	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(PSOType::Transparent3D));
+	engineCommon_->GetCommandList()->SetPipelineState(engineCommon_->GetPSOManager().GetPSO(psoType_));
 	if (indexResource) {
 		engineCommon_->GetCommandList()->IASetIndexBuffer(&indexBufferView);
 	}

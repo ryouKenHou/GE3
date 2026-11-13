@@ -1,4 +1,6 @@
 #include "SceneManager.h"
+#include "BaseScene.h"
+#include "EngineCommon.h"  
 
 void SceneManager::ChangeScene(std::unique_ptr<BaseScene> nextScene) {
     nextScene_ = std::move(nextScene);
@@ -11,7 +13,7 @@ void SceneManager::Update() {
             currentScene_->Finalize();
         }
         currentScene_ = std::move(nextScene_);
-        currentScene_->Initialize();
+        currentScene_->Initialize(engineCommon_, this);
     }
 
     if (currentScene_) {

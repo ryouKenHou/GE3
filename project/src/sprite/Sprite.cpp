@@ -1,4 +1,5 @@
 #include "Sprite.h"
+#include "EngineCommon.h"
 
 void Sprite::Initialize(EngineCommon* engineCommon, SpriteCommon* spriteCommon) {
 	engineCommon_ = engineCommon;
@@ -17,7 +18,7 @@ void Sprite::Initialize(EngineCommon* engineCommon, SpriteCommon* spriteCommon) 
 	materialData->uvTransform = Matrix4x4::Identity();
 
 	//load sencond texture for sprite
-	DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+	DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 		"resources/05_02/uvChecker.png",
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),
@@ -28,7 +29,7 @@ void Sprite::Initialize(EngineCommon* engineCommon, SpriteCommon* spriteCommon) 
 
 void Sprite::SetTexture(const std::string& textureFilePath) {
 	// Load the new texture and get its descriptor handle
-	DescriptorHandle texHandle = TextureManager::GetInstance().Load(
+	DescriptorHandle texHandle = engineCommon_->GetTextureManager().Load(
 		textureFilePath,
 		engineCommon_->GetDevice(),
 		engineCommon_->GetCommandList(),

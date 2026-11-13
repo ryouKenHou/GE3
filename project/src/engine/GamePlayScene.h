@@ -10,14 +10,15 @@
 
 class GamePlayScene : public BaseScene {
 public:
-    void Initialize() override;
+    void Initialize(EngineCommon* engineCommon, SceneManager* sceneManager) override;
     void Finalize() override;
     void Update() override;
     void Draw() override;
 
 private:
     EngineCommon* engineCommon_ = nullptr;
-    std::unique_ptr<SpriteCommon> spriteCommon_;
+    SceneManager* sceneManager_ = nullptr;
+    SpriteCommon* spriteCommon_ = nullptr;
 
     int32_t kClientWidth_ = 0;
     int32_t kClientHeight_ = 0;

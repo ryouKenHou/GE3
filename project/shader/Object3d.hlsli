@@ -25,3 +25,9 @@ struct Material
     int32_t enableLighting;
     float32_t4x4 uvTransform;
 };
+
+struct TransformationMatrix
+{
+    float32_t4x4 WVP;
+    float32_t4x4 World;
+};

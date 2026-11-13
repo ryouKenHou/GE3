@@ -18,10 +18,13 @@ struct TextureData {
 
 class TextureManager {
 public:
-    static TextureManager& GetInstance() {
-        static TextureManager instance;
-        return instance;
-    }
+    //static TextureManager& GetInstance() {
+    //    static TextureManager instance;
+    //    return instance;
+    //}
+
+	TextureManager() = default;
+	~TextureManager() = default;
 
     // Loads a texture, or returns the existing handle if already loaded
     DescriptorHandle Load(const std::string& filePath, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, DescriptorAllocator& srvAllocator);
@@ -95,6 +98,10 @@ public:
 		commandList->ResourceBarrier(1, &barrier);
 		return intermediateResource;
 
+	}
+
+	void Clear() {
+		textures_.clear();
 	}
 
 private:

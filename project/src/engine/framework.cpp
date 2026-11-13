@@ -4,32 +4,33 @@
 
 Framework::~Framework() = default;
 
-void Framework::Initialize() {
-    EngineCommon::GetInstance().Initialize(WindowManager::kClientWidth, WindowManager::kClientHeight);
+void Framework::Initialize(int32_t Width, int32_t Height, const wchar_t* title) {
+	engineCommon_.Initialize(Width, Height, title);
 
     // Start with whatever scene the concrete game's Framework subclass provides.
-    SceneManager::GetInstance().ChangeScene(CreateInitialScene());
+	sceneManager_.SetEngineCommon(&engineCommon_);
+    sceneManager_.ChangeScene(CreateInitialScene());
 }
 
 void Framework::Finalize() {
-    SceneManager::GetInstance().Finalize();
-    EngineCommon::GetInstance().Finalize();
+    sceneManager_.Finalize();
+    engineCommon_.Finalize();
 }
 
 void Framework::Update() {
-    SceneManager::GetInstance().Update();
+    sceneManager_.Update();
 }
 
 void Framework::Draw() {
-    SceneManager::GetInstance().Draw();
+    sceneManager_.Draw();
 }
 
 bool Framework::IsEndRequested() {
-    return EngineCommon::GetInstance().GetWindowManager().ProcessMessages();
+    return engineCommon_.GetWindowManager().ProcessMessages();
 }
 
-void Framework::Run() {
-    Initialize();
+void Framework::Run(int32_t Width, int32_t Height, const wchar_t* title) {
+    Initialize(Width, Height, title);
 
     while (true) {
         if (IsEndRequested()) {

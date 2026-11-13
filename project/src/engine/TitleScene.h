@@ -3,7 +3,7 @@
 
 class TitleScene : public BaseScene {
 public:
-    void Initialize() override;
+    void Initialize(EngineCommon* engineCommon, SceneManager* sceneManager) override;
     void Finalize() override;
     void Update() override;
     void Draw() override;

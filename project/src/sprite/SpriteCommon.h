@@ -2,17 +2,19 @@
 #include <string>
 #include <d3d12.h>
 #include <dxcapi.h>
-#include "EngineCommon.h"
+#include "EngineHelper.h"
+
+class EngineCommon;
 
 class SpriteCommon {
 private:
-	ID3D12RootSignature* rootSigiture_;
+	ID3D12RootSignature* rootSigiture_ = nullptr;
 	ID3D12PipelineState* pso_ = nullptr;
 	EngineCommon* engineCommon_ = nullptr;
 
 	VertexData* vertexData = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResource = nullptr;
 	D3D12_INDEX_BUFFER_VIEW indexBufferView{};
 	uint32_t indexCount = 0;

@@ -26,6 +26,8 @@ private:
 
 public:
 
+	void SetIsControlEnable(bool flag) { isControlEnabled_ = flag; };
+
 	void Initialize(int kClientWidth, int kClientHeight, Transform transform);
 
 	void Update(BYTE key[256]);

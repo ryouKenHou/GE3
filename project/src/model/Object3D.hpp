@@ -16,7 +16,7 @@ private:
 
 	// --- DIRTY FLAGS ---
 	bool isTransformDirty_ = true;
-	bool isUVTransformDirty_ = true;
+	bool isMaterialDirty_ = true;
 public:
 	void Initialize(EngineCommon* engineCommon) {
 		engineCommon_ = engineCommon;
@@ -70,14 +70,10 @@ public:
 
 	void SetUVTransform(const Transform& uvTransform) {
 		uvTransform_ = uvTransform;
-		isUVTransformDirty_ = true;
+		isMaterialDirty_ = true;
 	}
 
 	void UpdateTransforms(Matrix4x4 CameraViewProjectionMatrix) {
-		if (!isTransformDirty_ && !isUVTransformDirty_){
-			return;
-		}
-
 		if (isTransformDirty_) {
 			Matrix4x4 worldMatrix = Matrix4x4::MakeAffineMatrix(transform_.scale, transform_.rotation, transform_.translation);
 			Matrix4x4 wvpMatrix = worldMatrix * CameraViewProjectionMatrix;
@@ -85,11 +81,27 @@ public:
 			isTransformDirty_ = false;
 		}
 		
-		if (isUVTransformDirty_) {
+		if (isMaterialDirty_) {
 			materialData->uvTransform = Matrix4x4::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotation, uvTransform_.translation);
-			isUVTransformDirty_ = false;
+			isMaterialDirty_ = false;
 		}
 	}
 
-	Material& GetMaterialData() { return *materialData; }
+	const Material& GetMaterialData() const { return *materialData; }
+
+	void SetMaterialData(const Material& material) {
+		*materialData = material;
+		isMaterialDirty_ = true; // in case uvTransform was changed
+	}
+	void SetMaterialColor(const Vector4& color) {
+		materialData->color = color;
+		isMaterialDirty_ = true;
+	}
+
+	void SetEnableLighting(bool enable) {
+		materialData->enableLighting = enable ? 1 : 0;
+		isMaterialDirty_ = true;
+	}
+
+
 };

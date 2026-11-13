@@ -1,7 +1,9 @@
 #pragma once
 #include <vector>
 #include <random>
-#include "EngineCommon.h"
+#include "EngineHelper.h"
+
+class EngineCommon;
 
 struct ParticleData {
 	Vector3 position;
@@ -12,12 +14,39 @@ struct ParticleData {
 	float scale = 1.0f;
 };
 
+// ---------- Field system ----------
+struct AABB {
+	Vector3 min{ -1.0f, -1.0f, -1.0f };
+	Vector3 max{ 1.0f, 1.0f, 1.0f };
+
+	bool Contains(const Vector3& p) const {
+		return (p.x >= min.x && p.x <= max.x) &&
+			(p.y >= min.y && p.y <= max.y) &&
+			(p.z >= min.z && p.z <= max.z);
+	}
+};
+
+enum class FieldType {
+	Gravity,      // Constant pull toward -direction (or a fixed vector), ignores particle direction
+	Acceleration, // Adds acceleration vector * deltaTime to velocity every frame while inside the area
+};
+
+struct ParticleField {
+	FieldType type = FieldType::Gravity;
+	AABB area{};
+	Vector3 direction{ 0.0f, -1.0f, 0.0f }; // normalized direction the force pushes toward
+	float strength = 9.8f;                   // magnitude of the force / acceleration
+	bool enabled = true;
+};
+
 class ParticleManager {
 public:
-	static ParticleManager& GetInstance() {
-		static ParticleManager instance;
-		return instance;
-	}
+	//static ParticleManager& GetInstance() {
+	//	static ParticleManager instance;
+	//	return instance;
+	//}
+	ParticleManager() = default;
+	~ParticleManager() = default;
 
 	void Initialize(EngineCommon* engineCommon, uint32_t maxParticles = 256);
 
@@ -34,35 +63,50 @@ public:
 	// ImGui::NewFrame() and ImGui::Render().
 	void DrawImGui();
 
+	// ---------- Field management ----------
+	// Adds a field and returns its index (use with RemoveField / GetField).
+	size_t AddField(const ParticleField& field);
+	void RemoveField(size_t index);
+	void ClearFields();
+	ParticleField* GetField(size_t index);
+	size_t GetFieldCount() const { return fields_.size(); }
+
 private:
-	ParticleManager() = default;
-	ParticleManager(const ParticleManager&) = delete;
+	//ParticleManager() = default;
+	//ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
-
-	struct GPUSlot {
-		Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource;
-		TransformationMatrix* wvpData = nullptr;
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-		Material* materialData = nullptr;
-	};
 
 	EngineCommon* engineCommon_ = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
-	
-
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvGPUHandle_{};
 
+	// ---------- Instancing GPU resources ----------
+	// Per-instance TransformationMatrix (WVP/World), indexed by SV_InstanceID in the VS.
+	Microsoft::WRL::ComPtr<ID3D12Resource> instancingTransformResource_;
+	TransformationMatrix* instancingTransformData_ = nullptr;
+
+	// Per-instance color (fade alpha etc.), indexed by SV_InstanceID in the VS.
+	Microsoft::WRL::ComPtr<ID3D12Resource> instancingColorResource_;
+	Vector4* instancingColorData_ = nullptr;
+
+	// Shared material (uvTransform / enableLighting / base tint color), one CBV for all particles.
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+	Material* materialData_ = nullptr;
+
 	std::vector<ParticleData> particles_;
-	std::vector<GPUSlot> gpuSlots_;
 	uint32_t maxParticles_ = 0;
+
+	std::vector<ParticleField> fields_;
 
 	std::mt19937 randomEngine_{ std::random_device{}() };
 
+	bool useBillboardMatrix_ = true;
+
 	void CreateQuadMesh();
+	void ApplyFields(ParticleData& p, float deltaTime);
 
 	// ---------- Editor-controlled emission parameters ----------
 	Vector3 spawnPosition_{ 0.0f, 0.0f, 0.0f };
@@ -80,4 +124,7 @@ private:
 	int emitCountManual_ = 20;     // used by the "Emit Now" button
 
 	char textureFilePathBuf_[256] = "resources/05_02/circle.png";
+
+	// ---------- Field editor state ----------
+	int editingFieldIndex_ = -1;
 };

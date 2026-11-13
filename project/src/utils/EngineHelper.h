@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <assert.h>
 #include "Matrix4x4.hpp"
 #include <d3d12.h>
 #include <wrl.h>
